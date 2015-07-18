@@ -26,7 +26,6 @@ to go
     [ 
       set pcolor black
       set food-eaten (food-eaten + 1)
-      set label food-eaten
     ]
   ]
   tick  
