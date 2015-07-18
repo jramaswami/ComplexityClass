@@ -1,4 +1,5 @@
 turtles-own [food-eaten]
+patches-own [nest?]
 
 to setup
   clear-all
@@ -11,23 +12,30 @@ to setup
     set color red
     set food-eaten 0
   ]
-  grow-food
+  setup-patches
+end
+
+to setup-patches
+    ask patches [
+      setup-nest
+      color-patches
+    ]
+end
+
+to setup-nest
+    set nest? (distancexy 0 0) < 2
 end
 
 to go
   if not any? patches with [pcolor = green] [stop]
   ask turtles 
   [
-    ifelse coin-flip?    ; if coin-flip? true turn right; if false turn left
-      [right random max-turn-angle] 
-      [left random max-turn-angle]
-    forward random max-step-size
-    if pcolor = green      ; if the turtle is on a green patch
-    [ 
-      set pcolor black
-      set food-eaten (food-eaten + 1)
-      if (food-eaten > 2) [set color blue]
-      if (food-eaten > 4) [set color yellow]
+    ifelse (color = red) [
+      search-for-food
+      if pcolor = green [eat-food]      ; if the turtle is on a green patch
+    ]
+    [
+      ifelse (pcolor = gray) [set color red] [go-to-nest]
     ]
   ]
   tick  
@@ -37,8 +45,27 @@ to-report coin-flip?      ; returns true or false at random
   report random 2 = 0
 end
 
-to grow-food
-  ask patches [set pcolor green]
+to color-patches
+  ifelse nest? [set pcolor gray] [set pcolor green]
+end
+
+to search-for-food
+  ifelse coin-flip?    ; if coin-flip? true turn right; if false turn left
+  [right random max-turn-angle] 
+  [left random max-turn-angle]
+      
+  forward random max-step-size  
+end  
+
+to eat-food 
+  set pcolor black
+  set food-eaten (food-eaten + 1)
+  set color blue
+end
+
+to go-to-nest 
+  facexy 0 0
+  forward random max-step-size
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
