@@ -120,7 +120,7 @@ population
 population
 1
 200
-200
+100
 1
 1
 NIL
@@ -153,7 +153,7 @@ max-step-size
 max-step-size
 1
 10
-4
+8
 1
 1
 NIL
@@ -168,7 +168,7 @@ max-turn-angle
 max-turn-angle
 1
 180
-61
+120
 1
 1
 NIL
@@ -521,6 +521,25 @@ NetLogo 5.2.0
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="Unit1BegExp1" repetitions="1000" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <metric>ticks</metric>
+    <enumeratedValueSet variable="population">
+      <value value="50"/>
+      <value value="100"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-step-size">
+      <value value="4"/>
+      <value value="8"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="max-turn-angle">
+      <value value="60"/>
+      <value value="120"/>
+    </enumeratedValueSet>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
