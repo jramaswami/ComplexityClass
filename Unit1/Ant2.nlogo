@@ -7,7 +7,7 @@ to setup
   ask turtles 
   [
     set shape "bug"
-    set size 1
+    set size 2
     set color red
     set food-eaten 0
   ]
