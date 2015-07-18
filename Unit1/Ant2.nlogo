@@ -26,6 +26,8 @@ to go
     [ 
       set pcolor black
       set food-eaten (food-eaten + 1)
+      if (food-eaten > 2) [set color blue]
+      if (food-eaten > 4) [set color yellow]
     ]
   ]
   tick  
