@@ -24,8 +24,7 @@ to setup-nest
   ask patches [
     if (distancexy 0 0) < 2 [
       set nest? true
-      set pcolor gray ]
-  ]
+      set pcolor gray]]
 end
 
 to setup-food
@@ -55,6 +54,7 @@ to setup-food
     ask patches [
       if (distancexy x y) < 3 [
         set food? true
+        set pcolor green
         set amount-of-food (random(4) + 1)]]]
 end
 
@@ -66,29 +66,17 @@ end
 
 to go
   if not any? patches with [pcolor = green] [stop]
-  ask turtles 
-  [
+  ask turtles [
     ifelse (color = red) [
       search-for-food
-      if pcolor = green [eat-food]      ; if the turtle is on a green patch
-    ]
+      if pcolor = green [eat-food]]      ; if the turtle is on a green patch
     [
-      ifelse (pcolor = gray) [set color red] [go-to-nest]
-    ]
-  ]
+      ifelse (pcolor = gray) [set color red] [go-to-nest]]]
   tick  
 end
 
 to-report coin-flip?      ; returns true or false at random
   report random 2 = 0
-end
-
-to color-patches
-  ask patches [
-    if nest? [set pcolor gray] 
-    if (amount-of-food > 0) [
-      set pcolor yellow
-      set plabel amount-of-food]]
 end
 
 to search-for-food
@@ -100,7 +88,13 @@ to search-for-food
 end  
 
 to eat-food 
-  set pcolor black
+  ;; eat the food from the patch
+  ask patch-here [
+    set amount-of-food (amount-of-food - 1)
+    if (amount-of-food < 1) [
+      set pcolor black
+      set food? false]]
+  ;; yum, now any has eaten food
   set food-eaten (food-eaten + 1)
   set color blue
 end
@@ -190,7 +184,7 @@ population
 population
 1
 200
-200
+95
 1
 1
 NIL
@@ -223,7 +217,7 @@ max-step-size
 max-step-size
 1
 10
-8
+2
 1
 1
 NIL
