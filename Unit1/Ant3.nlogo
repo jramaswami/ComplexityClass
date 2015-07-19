@@ -68,10 +68,11 @@ to go
     ifelse (color = red) [
       search-for-food
       ;; pick up if there is any food
-      if pcolor = green [pick-up-food]]
+      if found-food? [pick-up-food]]
     [
       ifelse at-nest? [drop-food] [go-to-nest]]]
-  tick  
+  tick
+  repaint-patches
 end
 
 to search-for-food
@@ -95,6 +96,7 @@ to pick-up-food
 end
 
 to drop-food
+  ask patch-here [set amount-of-food (amount-of-food + 1)]
   set color red
 end
 
@@ -103,6 +105,11 @@ to go-to-nest
   forward random max-step-size
 end
 
+to repaint-patches 
+  ask patches [
+    if (distancexy 0 0) < 2 [
+      if (amount-of-food > 0) [set pcolor nest-color?]]]
+end
 ;;;; REPORTERS ;;;;
 
 to-report at-nest?
@@ -110,7 +117,7 @@ to-report at-nest?
 end
 
 to-report found-food?
-  if (((distancexy 0 0 )) > 2 and (amount-of-food > 0)) [report true] [report false]
+  ifelse (((distancexy 0 0 )) >= 2 and (amount-of-food > 0)) [report true] [report false]
 end
 
 to-report coin-flip?      ; returns true or false at random
@@ -122,6 +129,14 @@ to-report random-cor [min-cor max-cor]
   while [cor < min-cor] [set cor (random max-cor)]
   report cor
 end
+
+to-report nest-color? [amount-of-food]
+  ifelse (amount-of-food > 0) [
+    let c (119 - int((amount-of-food / 3)))
+    if (c < 112) [set c 112]
+    report c][report gray]
+end
+
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
