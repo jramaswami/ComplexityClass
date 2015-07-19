@@ -2,10 +2,14 @@ globals [
   food-heap-patch-set 
   nest-patch-set 
   bg-patch-set 
-  bg-color]
+  bg-color ]
 
 turtles-own [food-eaten]
-patches-own [nest? food? amount-of-food]
+patches-own [
+  nest? 
+  food? 
+  amount-of-food
+  pheromone ]
 
 
 ;;;; SETUP ;;;;
@@ -125,15 +129,25 @@ to drop-food
   set color red
 end
 
-to go-to-nest 
+to go-to-nest
   facexy 0 0
+  ;; drop pheromones
+  drop-pheromones  
   forward random max-step-size
 end
 
 to repaint-patches 
   ask nest-patch-set [set pcolor nest-color?]
   ask food-heap-patch-set [set pcolor food-heap-color?]
+  ask patches [
+    if ((nest? < 1) and (amount-of-food < 1) and (pheromone > 0)) [set pcolor yellow] ]
 end
+
+to drop-pheromones
+  ask patch-here [
+    if (nest? < 1) [set pheromone (pheromone + 1)] ]
+end
+
 ;;;; REPORTERS ;;;;
 
 to-report at-nest?
