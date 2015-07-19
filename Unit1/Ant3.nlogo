@@ -4,13 +4,14 @@ globals [
   bg-patch-set 
   bg-color ]
 
-turtles-own [food-eaten]
+turtles-own [
+  food-eaten
+]
+
 patches-own [
   nest? 
-  food? 
   amount-of-food
   pheromone ]
-
 
 ;;;; SETUP ;;;;
 to setup
@@ -82,8 +83,6 @@ to setup-food
     
     ask patches [
       if (distancexy x y) < 3 [
-        set food? true
-        set pcolor green
         set amount-of-food (random(4) + 1)]]]
   
   set food-heap-patch-set patches with [amount-of-food > 0]
@@ -95,30 +94,36 @@ to go
   if not any? food-heap-patch-set with [amount-of-food > 0] [stop]
   ask turtles [
     ifelse (color = red) [
-      search-for-food
-      ;; pick up if there is any food
-      if found-food? [pick-up-food]]
+      search-for-food ]
     [
       ifelse at-nest? [drop-food] [go-to-nest]]]
   tick
+  evaporate-pheromones
   repaint-patches
 end
 
 to search-for-food
+  ;; did ant run into a pheremone trail
+  ifelse (pheromone > .5) [follow-pheromone-trail] [random-walk]
+  forward 1
+  ;; pick up if there is any food
+  if found-food? [pick-up-food]
+end  
+
+to follow-pheromone-trail
+  uphill pheromone
+end
+
+to random-walk
   ifelse coin-flip?    ; if coin-flip? true turn right; if false turn left
   [right random max-turn-angle] 
-  [left random max-turn-angle]
-      
-  forward random max-step-size  
-end  
+  [left random max-turn-angle]  
+end
 
 to pick-up-food 
   ;; eat the food from the patch
   ask patch-here [
-    set amount-of-food (amount-of-food - 1)
-    if (amount-of-food < 1) [
-      set pcolor black
-      set food? false]]
+    set amount-of-food (amount-of-food - 1)]
   ;; yum, now any has eaten food
   set food-eaten (food-eaten + 1)
   set color blue
@@ -133,21 +138,31 @@ to go-to-nest
   facexy 0 0
   ;; drop pheromones
   drop-pheromones  
-  forward random max-step-size
+  forward 1
 end
 
 to repaint-patches 
   ask nest-patch-set [set pcolor nest-color?]
   ask food-heap-patch-set [set pcolor food-heap-color?]
   ask patches [
-    if ((nest? < 1) and (amount-of-food < 1) and (pheromone > 0)) [set pcolor yellow] ]
+    if ((nest? < 1) and (amount-of-food < 1) and (pheromone > 0)) [set pcolor yellow] 
+    if ((nest? < 1) and (amount-of-food < 1) and (pheromone < 1)) [set pcolor bg-color]]
+
+  
+;  ask patches [
+;    if (pheromone > 0) [set plabel pheromone]]
 end
 
 to drop-pheromones
   ask patch-here [
-    if (nest? < 1) [set pheromone (pheromone + 1)] ]
+    if (nest? < 1) [set pheromone (distancexy 0 0)]]
 end
 
+to evaporate-pheromones
+  ask patches [
+    set pheromone (pheromone * ((100 - diffusion-rate) / 100))]
+end
+        
 ;;;; REPORTERS ;;;;
 
 to-report at-nest?
@@ -176,7 +191,7 @@ to-report nest-color?
 end
 
 to-report food-heap-color?
-  ifelse (amount-of-food > 0) [report (green - amount-of-food)][report black]
+  ifelse (amount-of-food > 0) [report (green - amount-of-food)][report bg-color]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
@@ -259,7 +274,7 @@ population
 population
 1
 200
-95
+15
 1
 1
 NIL
@@ -284,30 +299,30 @@ PENS
 "Total Food Eaten" 1.0 0 -16777216 true "" "plot sum [food-eaten] of turtles"
 
 SLIDER
-21
-148
-180
-181
-max-step-size
-max-step-size
+18
+179
+177
+212
+max-turn-angle
+max-turn-angle
 1
-10
-2
+180
+120
 1
 1
 NIL
 HORIZONTAL
 
 SLIDER
-22
-188
-181
-221
-max-turn-angle
-max-turn-angle
-1
-180
-120
+19
+142
+177
+175
+diffusion-rate
+diffusion-rate
+0
+100
+10
 1
 1
 NIL
