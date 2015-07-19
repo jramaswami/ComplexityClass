@@ -69,9 +69,10 @@ to go
   ask turtles [
     ifelse (color = red) [
       search-for-food
-      if pcolor = green [eat-food]]      ; if the turtle is on a green patch
+      ;; pick up if there is any food
+      if pcolor = green [pick-up-food]]
     [
-      ifelse (pcolor = gray) [set color red] [go-to-nest]]]
+      ifelse (pcolor = gray) [drop-food] [go-to-nest]]]
   tick  
 end
 
@@ -87,7 +88,7 @@ to search-for-food
   forward random max-step-size  
 end  
 
-to eat-food 
+to pick-up-food 
   ;; eat the food from the patch
   ask patch-here [
     set amount-of-food (amount-of-food - 1)
@@ -97,6 +98,14 @@ to eat-food
   ;; yum, now any has eaten food
   set food-eaten (food-eaten + 1)
   set color blue
+end
+
+to-report at-nest?
+  ifelse (distancexy 0 0) < 2 [report true] [report false]
+end
+
+to drop-food
+  set color red
 end
 
 to go-to-nest 
