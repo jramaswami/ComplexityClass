@@ -1,6 +1,8 @@
 turtles-own [food-eaten]
 patches-own [nest? food? amount-of-food]
 
+
+;;;; SETUP ;;;;
 to setup
   clear-all
   reset-ticks
@@ -58,12 +60,8 @@ to setup-food
         set amount-of-food (random(4) + 1)]]]
 end
 
-to-report random-cor [min-cor max-cor]
-  let cor (random max-cor)
-  while [cor < min-cor] [set cor (random max-cor)]
-  report cor
-end
 
+;;;; COMMANDS ;;;;
 to go
   if not any? patches with [pcolor = green] [stop]
   ask turtles [
@@ -72,12 +70,8 @@ to go
       ;; pick up if there is any food
       if pcolor = green [pick-up-food]]
     [
-      ifelse (pcolor = gray) [drop-food] [go-to-nest]]]
+      ifelse at-nest? [drop-food] [go-to-nest]]]
   tick  
-end
-
-to-report coin-flip?      ; returns true or false at random
-  report random 2 = 0
 end
 
 to search-for-food
@@ -100,10 +94,6 @@ to pick-up-food
   set color blue
 end
 
-to-report at-nest?
-  ifelse (distancexy 0 0) < 2 [report true] [report false]
-end
-
 to drop-food
   set color red
 end
@@ -111,6 +101,26 @@ end
 to go-to-nest 
   facexy 0 0
   forward random max-step-size
+end
+
+;;;; REPORTERS ;;;;
+
+to-report at-nest?
+  ifelse (distancexy 0 0) < 2 [report true] [report false]
+end
+
+to-report found-food?
+  if (((distancexy 0 0 )) > 2 and (amount-of-food > 0)) [report true] [report false]
+end
+
+to-report coin-flip?      ; returns true or false at random
+  report random 2 = 0
+end
+
+to-report random-cor [min-cor max-cor]
+  let cor (random max-cor)
+  while [cor < min-cor] [set cor (random max-cor)]
+  report cor
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
