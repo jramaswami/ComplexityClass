@@ -1,14 +1,25 @@
+globals [
+  food-heap-patch-set 
+  nest-patch-set 
+  bg-patch-set 
+  bg-color]
+
 turtles-own [food-eaten]
 patches-own [nest? food? amount-of-food]
 
 
 ;;;; SETUP ;;;;
 to setup
+  set bg-color 9
+  
   clear-all
   reset-ticks
   setup-turtles
   setup-nest
   setup-food
+  setup-background
+  repaint-patches
+  
 end
 
 to setup-turtles
@@ -22,11 +33,23 @@ to setup-turtles
   ]  
 end
 
+to setup-background
+  set bg-patch-set patches with [amount-of-food < 1 and nest? < 1]
+  set bg-color 9 ;; this is here because I can't get the global to work (!?)
+  ask bg-patch-set [set pcolor bg-color]
+end
+
 to setup-nest
-  ask patches [
-    if (distancexy 0 0) < 2 [
-      set nest? true
-      set pcolor gray]]
+  let nest-center patch 0 0
+  ask nest-center [
+    ask neighbors [set nest? 1]
+;    ask patch-at 2 0 [set nest? 1]
+;    ask patch-at 0 2 [set nest? 1]
+;    ask patch-at -2 0 [set nest? 1]
+;    ask patch-at 0 -2 [set nest? 1]
+    set nest? 1
+  ]
+  set nest-patch-set patches with [nest? > 0]
 end
 
 to setup-food
@@ -58,12 +81,14 @@ to setup-food
         set food? true
         set pcolor green
         set amount-of-food (random(4) + 1)]]]
+  
+  set food-heap-patch-set patches with [amount-of-food > 0]
 end
 
 
 ;;;; COMMANDS ;;;;
 to go
-  if not any? patches with [pcolor = green] [stop]
+  if not any? food-heap-patch-set with [amount-of-food > 0] [stop]
   ask turtles [
     ifelse (color = red) [
       search-for-food
@@ -106,9 +131,8 @@ to go-to-nest
 end
 
 to repaint-patches 
-  ask patches [
-    if (distancexy 0 0) < 2 [
-      if (amount-of-food > 0) [set pcolor nest-color?]]]
+  ask nest-patch-set [set pcolor nest-color?]
+  ask food-heap-patch-set [set pcolor food-heap-color?]
 end
 ;;;; REPORTERS ;;;;
 
@@ -130,13 +154,16 @@ to-report random-cor [min-cor max-cor]
   report cor
 end
 
-to-report nest-color? [amount-of-food]
+to-report nest-color?
   ifelse (amount-of-food > 0) [
     let c (119 - int((amount-of-food / 3)))
     if (c < 112) [set c 112]
-    report c][report gray]
+    report c][report 4]
 end
 
+to-report food-heap-color?
+  ifelse (amount-of-food > 0) [report (green - amount-of-food)][report black]
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
 210
