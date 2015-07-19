@@ -1,9 +1,15 @@
 turtles-own [food-eaten]
-patches-own [nest?]
+patches-own [nest? food? amount-of-food]
 
 to setup
   clear-all
   reset-ticks
+  setup-turtles
+  setup-nest
+  setup-food
+end
+
+to setup-turtles
   create-turtles population
   ask turtles 
   [
@@ -11,19 +17,51 @@ to setup
     set size 2
     set color red
     set food-eaten 0
-  ]
-  setup-patches
-end
-
-to setup-patches
-    ask patches [
-      setup-nest
-      color-patches
-    ]
+  ]  
 end
 
 to setup-nest
-    set nest? (distancexy 0 0) < 2
+  ask patches [
+    if (distancexy 0 0) < 2 [
+      set nest? true
+      set pcolor gray ]
+  ]
+end
+
+to setup-food
+  ;; make sure the food heaps aren't on the nest
+  ;; or at the edges of the world
+  let min-x 6
+  let max-x (max-pxcor - 4)
+  let min-y 6
+  let max-y (max-pycor - 4)
+ 
+  
+  let x 0
+  let y 0
+  let i 0
+  while [i < 4] [
+    ;; pick a random x and y coordinate
+    set x (random-cor min-x max-x)
+    set y (random-cor min-y max-y)
+    
+    if (i = 1) [ set x (x * -1)]
+    if (i = 2) [ set y (y * -1)]
+    if (i = 3) [
+      set x (x * -1)
+      set y (y * -1) ]
+    set i (i + 1)
+    
+    ask patches [
+      if (distancexy x y) < 3 [
+        set food? true
+        set amount-of-food (random(4) + 1)]]]
+end
+
+to-report random-cor [min-cor max-cor]
+  let cor (random max-cor)
+  while [cor < min-cor] [set cor (random max-cor)]
+  report cor
 end
 
 to go
@@ -46,7 +84,11 @@ to-report coin-flip?      ; returns true or false at random
 end
 
 to color-patches
-  ifelse nest? [set pcolor gray] [set pcolor green]
+  ask patches [
+    if nest? [set pcolor gray] 
+    if (amount-of-food > 0) [
+      set pcolor yellow
+      set plabel amount-of-food]]
 end
 
 to search-for-food
@@ -148,7 +190,7 @@ population
 population
 1
 200
-100
+200
 1
 1
 NIL
