@@ -1,15 +1,21 @@
 breed [bunnies bunny]
-globals [last-count]
+globals [last-count no-change]
 
 Bunnies-own [old]
 
-to setup
+to setup  
   ca
   let one-patch (patch-set patch 0 0)
   ask one-patch [sprout-bunnies initial-population [set old false set shape "bunny2" set color white set size 4 disperse]]
+
+  ;; added to allow for behavior space run
+  reset-ticks
+  set no-change  0  
 end 
 
 to reproduce
+  if no-change > 4 [stop]
+  
   if (count bunnies) > 0 
   [
     ask bunnies [ set old true ]
@@ -18,6 +24,11 @@ to reproduce
     ask bunnies with [old] [die]
     do-plotting
   ]
+  
+  ;; added to allow for behavior space run
+  tick
+  if last-count = count bunnies [set no-change (no-change + 1)]
+  
 end 
 
 to-report how-many-to-hatch
@@ -308,7 +319,6 @@ If you use this model, please cite it as: "Logistic Population Growth" model, Co
 Copyright 2013 Santa Fe Institute.
 
 This model is licensed by the Creative Commons Attribution-NonCommercial-NoDerivs 3.0 License ( http://creativecommons.org/licenses/by-nc-nd/3.0/ ). This states that you may copy, distribute, and transmit the work under the condition that you give attribution to ComplexityExplorer.org, and your use is for non-commercial purposes.
-
 
 @#$#@#$#@
 default
@@ -645,7 +655,7 @@ Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 
 @#$#@#$#@
-NetLogo 5.0.3
+NetLogo 5.2.0
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
@@ -653,9 +663,9 @@ NetLogo 5.0.3
 @#$#@#$#@
 default
 0.0
--0.2 0 1.0 0.0
+-0.2 0 0.0 1.0
 0.0 1 1.0 0.0
-0.2 0 1.0 0.0
+0.2 0 0.0 1.0
 link direction
 true
 0
