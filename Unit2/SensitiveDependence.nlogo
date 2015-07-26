@@ -1,4 +1,4 @@
-globals [x-current x-new x-current' x-new' num-turtles-created turtlex0-who turtlex0'-who]
+globals [x-current x-new x-current' x-current'' x-new' x-new'' num-turtles-created turtlex0-who turtlex0'-who turtlex0''-who]
 
 to setup
   ;; (for this model to work with NetLogo's new plotting features,
@@ -19,7 +19,7 @@ to setup
     set xcor (x-current * max-pxcor)
     set ycor (x-new * max-pycor)
     set shape "dot"
-    set size 5
+    set size 6
     
     ;; for Unit 2 homework
     set label word (word (precision xcor 4) ", ") (precision ycor 4)
@@ -37,7 +37,7 @@ to setup
       set xcor (x-current' * max-pxcor)
       set ycor (x-new' * max-pycor)
       set shape "dot"
-      set size 3
+      set size 4
       
       ;; for unit 2 homework
       set label word (word (precision xcor 4) ", ") (precision ycor 4)
@@ -45,9 +45,30 @@ to setup
     ]   
   set num-turtles-created num-turtles-created + 1
   set turtlex0'-who num-turtles-created  ; "id number" for this turtle
+
+  set x-current'' x0''
+  set x-new'' (R * x-current'' * (1 - x-current''))  ; logistic map
+  
+  create-turtles 1; this turtle will plot x_{t+1} vs x_t using initial condition x0''
+    [
+      set color lime
+      set xcor (x-current'' * max-pxcor)
+      set ycor (x-new'' * max-pycor)
+      set shape "dot"
+      set size 2
+      
+      ;; for unit 2 homework
+      set label word (word (precision xcor 4) ", ") (precision ycor 4)
+      set label-color lime      
+    ]   
+  set num-turtles-created num-turtles-created + 1
+  set turtlex0''-who num-turtles-created  ; "id number" for this turtle
+
   
   ;; for Unit 2 homework
-  ask patches [set pcolor green]
+  ;; removed for intermediate question in order to
+  ;; better see the third dot
+  ;; ask patches [set pcolor green]
 end
 
 to go
@@ -72,6 +93,15 @@ to iterate
     [
       set xcor (x-current' * max-pxcor)  ; update coordinates for turtle representing second initial condition
       set ycor (x-new' * max-pycor)   
+      set label word (word (precision xcor 4) ", ") (precision ycor 4)
+    ]                              
+
+  set x-current'' x-new''
+  set x-new'' (R * x-current'' * (1 - x-current''))  ; one iteration of logistic map        
+  ask turtle turtlex0''-who
+    [
+      set xcor (x-current'' * max-pxcor)  ; update coordinates for turtle representing third initial condition
+      set ycor (x-new'' * max-pycor)   
       set label word (word (precision xcor 4) ", ") (precision ycor 4)
     ]                              
 end
@@ -137,10 +167,10 @@ to update-plot
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-293
-45
-605
-378
+683
+27
+995
+360
 -1
 -1
 9.152
@@ -164,10 +194,10 @@ ticks
 30.0
 
 BUTTON
-87
-256
-162
-295
+338
+98
+413
+137
 step
 go
 NIL
@@ -181,10 +211,10 @@ NIL
 1
 
 BUTTON
-13
-256
-88
-295
+264
+98
+339
+137
 NIL
 setup
 NIL
@@ -228,10 +258,10 @@ NIL
 HORIZONTAL
 
 PLOT
-24
-404
-606
-581
+9
+262
+591
+439
 Logistic map
 time t (* 10)
 x_t
@@ -245,12 +275,13 @@ true
 PENS
 "x{t}" 0.1 0 -13345367 true "" "plot x-current"
 "x'{t}" 0.1 0 -2674135 true "" "plot x-current'"
+"x''{t}" 0.1 0 -13840069 true "" "plot x-current''"
 
 MONITOR
-6
-329
-72
-374
+257
+171
+323
+216
 x{t}
 x-current
 4
@@ -258,10 +289,10 @@ x-current
 11
 
 MONITOR
-71
-329
-137
-374
+322
+171
+388
+216
 x{t+1}
 x-new
 4
@@ -269,60 +300,60 @@ x-new
 11
 
 TEXTBOX
-257
+647
+192
+690
 210
-300
-228
 x\n
 14
 0.0
 1
 
 TEXTBOX
-428
+818
+364
+833
 382
-443
-400
 x
 14
 0.0
 1
 
 TEXTBOX
-264
+654
+52
+682
 70
-292
-88
 1.0
 14
 0.0
 1
 
 TEXTBOX
-274
+664
+344
+679
 362
-289
-380
 0
 14
 0.0
 1
 
 TEXTBOX
-300
+690
+360
+705
 378
-315
-396
 0
 14
 0.0
 1
 
 TEXTBOX
-583
+973
+365
+996
 383
-606
-401
 1.0
 14
 0.0
@@ -389,40 +420,40 @@ Set Parameters:
 1
 
 TEXTBOX
-14
-226
-180
-266
+265
+68
+431
+108
 Iterate logistic map:
 16
 0.0
 1
 
 TEXTBOX
-267
+657
+200
+684
 218
-294
-236
 t+1
 11
 0.0
 1
 
 TEXTBOX
-440
+830
+370
+845
 388
-455
-406
 t
 11
 0.0
 1
 
 BUTTON
-160
-256
-223
-295
+411
+98
+474
+137
 NIL
 go
 T
@@ -451,10 +482,10 @@ NIL
 HORIZONTAL
 
 MONITOR
-144
-329
-209
-374
+395
+171
+460
+216
 x'{t}
 x-current'
 17
@@ -462,10 +493,10 @@ x-current'
 11
 
 MONITOR
-206
-329
-267
-374
+457
+171
+518
+216
 x'{t+1}
 x-new'
 17
@@ -473,24 +504,39 @@ x-new'
 11
 
 TEXTBOX
-46
-306
-99
-326
+297
+148
+350
+168
 First x
 16
 105.0
 1
 
 TEXTBOX
+419
+148
+491
 168
-306
-240
-326
 Second x
 16
 15.0
 1
+
+SLIDER
+11
+216
+223
+249
+x0''
+x0''
+0
+1
+0.20003
+.00001
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
