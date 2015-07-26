@@ -7,7 +7,7 @@ to setup
   ca
   let one-patch (patch-set patch 0 0)
   ask one-patch [sprout-bunnies initial-population [set old false set shape "fish" set color white set size 4 disperse]]
-  ask patches [set pcolor turquoise]
+  ask patches [set pcolor blue]
 end 
 
 to reproduce

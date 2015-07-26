@@ -20,6 +20,10 @@ to setup
     set ycor (x-new * max-pycor)
     set shape "dot"
     set size 5
+    
+    ;; for Unit 2 homework
+    set label word (word (precision xcor 4) ", ") (precision ycor 4)
+    set label-color blue
   ]    
   set num-turtles-created num-turtles-created + 1
   set turtlex0-who num-turtles-created   ; "id number" for this turtle
@@ -34,9 +38,16 @@ to setup
       set ycor (x-new' * max-pycor)
       set shape "dot"
       set size 3
+      
+      ;; for unit 2 homework
+      set label word (word (precision xcor 4) ", ") (precision ycor 4)
+      set label-color red      
     ]   
   set num-turtles-created num-turtles-created + 1
   set turtlex0'-who num-turtles-created  ; "id number" for this turtle
+  
+  ;; for Unit 2 homework
+  ask patches [set pcolor green]
 end
 
 to go
@@ -53,6 +64,7 @@ to iterate
   [
       set xcor (x-current * max-pxcor)  ; update coordinates for turtle representing first initial condition
       set ycor (x-new * max-pycor) 
+      set label word (word (precision xcor 4) ", ") (precision ycor 4)
   ]           
   set x-current' x-new'
   set x-new' (R * x-current' * (1 - x-current'))  ; one iteration of logistic map        
@@ -60,6 +72,7 @@ to iterate
     [
       set xcor (x-current' * max-pxcor)  ; update coordinates for turtle representing second initial condition
       set ycor (x-new' * max-pycor)   
+      set label word (word (precision xcor 4) ", ") (precision ycor 4)
     ]                              
 end
 
@@ -796,7 +809,7 @@ Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 
 @#$#@#$#@
-NetLogo 5.0.3
+NetLogo 5.2.0
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
