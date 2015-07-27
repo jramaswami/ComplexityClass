@@ -64,8 +64,7 @@ to eat-fish
       ask fish-to-be-eaten [die]
       
       ;; if enough fish are eaten, the predator reproduces
-      if (energy - old-energy) > 2 [
-        hatch 1 [set energy 5]]]] 
+      if (energy - old-energy) > 2 [hatch 1 [set energy 5]]]]
 end
 
 to grow-food
