@@ -5,7 +5,7 @@ to setup
   clear-all
   reset-ticks
   reproduce initial-population
-  create-predators 5
+  create-predators initial-shark-population
   ask patches [set pcolor blue]
   set fish-eaten 0
 end
@@ -17,8 +17,9 @@ to go
   let new-fish (new-population - (count turtles))
   reproduce new-fish
 
-  move-all
+  move-all  
   tick
+ 
 end
 
 to reproduce [population]
@@ -45,28 +46,30 @@ to move-all
   ask turtles [
     if color = orange [
       facexy random-xcor random-ycor
-      forward 1]
+      forward 2]
     if color = gray [
       facexy random-xcor random-ycor
-      forward 1]]
+      forward 4]]
 end
 
 to eat-fish
   ask turtles [
     if color = gray [
-      let x -2
-      while [x < 3] [
-        let y -2
-        while [y < 3] [
-          set fish-eaten (fish-eaten + count turtles-at x y)
-          set fish-eaten (fish-eaten + count turtles-at x y)  
-          ask turtles-at x y [if color = orange [die]]
-          set y (y + 1)]
-        set x (x + 1)]]]    
+      let old-energy energy
+      
+      ;; predator eats fish around it
+      let fish-to-be-eaten turtles in-radius 3 with [color = orange]
+      set energy (energy + count fish-to-be-eaten)
+      set fish-eaten (fish-eaten + count fish-to-be-eaten)
+      ask fish-to-be-eaten [die]
+      
+      ;; if enough fish are eaten, the predator reproduces
+      if (energy - old-energy) > 2 [
+        hatch 1 [set energy 5]]]] 
 end
 
 to grow-food
-  ;; place food randomly
+  ;; grow food on random patches
 end
 
 to eat-food
@@ -112,10 +115,10 @@ Population Model - Unit 2 Homework
 1
 
 SLIDER
-34
-84
-206
-117
+25
+114
+197
+147
 initial-population
 initial-population
 0
@@ -127,10 +130,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-36
-214
-102
-247
+34
+421
+100
+454
 setup
 setup
 NIL
@@ -144,10 +147,10 @@ NIL
 1
 
 BUTTON
-108
-214
-171
-247
+106
+421
+169
+454
 go
 go
 NIL
@@ -161,10 +164,10 @@ NIL
 1
 
 SLIDER
-35
-125
-207
-158
+26
+155
+198
+188
 reproduction-rate
 reproduction-rate
 1
@@ -193,6 +196,51 @@ false
 PENS
 "default" 1.0 0 -16777216 true "" "plot count turtles"
 "pen-1" 1.0 0 -2674135 true "" "plot fish-eaten"
+
+TEXTBOX
+96
+90
+122
+108
+FISH\n
+11
+0.0
+1
+
+TEXTBOX
+85
+209
+131
+227
+SHARKS
+11
+0.0
+1
+
+TEXTBOX
+80
+311
+115
+329
+FOOD
+11
+0.0
+1
+
+SLIDER
+26
+234
+197
+267
+initial-shark-population
+initial-shark-population
+1
+10
+5
+1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
