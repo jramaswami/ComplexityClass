@@ -1,9 +1,13 @@
-globals [fish-eaten]
-turtles-own [energy]
+globals [fish-eaten food-to-grow food-eaten]
+turtles-own [energy age]
+
+;; TODO: add spoilage of food instead of removal
+;; TODO: clean-up naming convention (sharks vs. predators and fish vs. prey)
 
 to setup
   clear-all
   reset-ticks
+  set food-to-grow (count patches * food-rate)
   reproduce initial-population
   create-predators initial-shark-population
   ask patches [set pcolor blue]
@@ -12,14 +16,18 @@ end
 
 to go
   eat-fish
-
+  grow-food 
+  eat-food
   let new-population (reproduction-rate * (count turtles))
   let new-fish (new-population - (count turtles))
   reproduce new-fish
-
-  move-all  
+  reproduce-sharks
+  move-all
+  spend-energy
+  die-off
+  get-older
+  ask turtles with [color = gray] [set label energy]  
   tick
- 
 end
 
 to reproduce [population]
@@ -27,6 +35,7 @@ to reproduce [population]
     set shape "fish"
     set color orange
     set size 2
+    set energy 5
     setxy random-xcor random-ycor]
 end
 
@@ -61,20 +70,46 @@ to eat-fish
       let fish-to-be-eaten turtles in-radius 3 with [color = orange]
       set energy (energy + count fish-to-be-eaten)
       set fish-eaten (fish-eaten + count fish-to-be-eaten)
-      ask fish-to-be-eaten [die]
-      
-      ;; if enough fish are eaten, the predator reproduces
-      if (energy - old-energy) > 2 [hatch 1 [set energy 5]]]]
+      ask fish-to-be-eaten [die]]]
 end
 
 to grow-food
-  ;; grow food on random patches
+  repeat food-to-grow [ask one-of patches [set pcolor green]]
 end
 
 to eat-food
-  ;; fish eat food
+  ask turtles [
+    if color = orange [
+      if pcolor = green [
+        set pcolor blue
+        set energy (energy + 1)
+        set food-eaten (food-eaten + 1)]]]
 end
-    
+
+to die-off
+  ;; get rid of food
+  ask patches [set pcolor blue]
+  ask turtles [if energy < 1 [die]]
+end
+
+to reproduce-sharks
+  ;let breeders (count turtles with [color = gray and energy > 5])
+  ;let new-predators (floor (breeders / 2))
+  ;let new-predators breeders
+  ;if new-predators > 0 [create-predators new-predators]
+  ask turtles with [color = gray and energy > 5] [hatch 1 [set energy 5 set age 0]]
+end
+
+to spend-energy 
+  ask turtles [set energy (energy - 1)]
+end
+
+to get-older 
+  ask turtles [
+    set age (age + 1)
+    if color = orange and age > max-fish-age [die]
+    if color = gray and age > max-shark-age [die]]
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
 705
@@ -115,14 +150,14 @@ Population Model - Unit 2 Homework
 
 SLIDER
 25
-114
+89
 197
-147
+122
 initial-population
 initial-population
 0
 200
-50
+101
 1
 1
 NIL
@@ -152,7 +187,7 @@ BUTTON
 454
 go
 go
-NIL
+T
 1
 T
 OBSERVER
@@ -164,9 +199,9 @@ NIL
 
 SLIDER
 26
-155
+130
 198
-188
+163
 reproduction-rate
 reproduction-rate
 1
@@ -193,24 +228,24 @@ true
 false
 "" ""
 PENS
-"default" 1.0 0 -16777216 true "" "plot count turtles"
-"pen-1" 1.0 0 -2674135 true "" "plot fish-eaten"
+"default" 1.0 0 -16777216 true "" "plot count turtles with [color = orange]"
+"pen-1" 1.0 0 -2674135 true "" "plot count turtles with [color = gray]"
 
 TEXTBOX
 96
-90
+65
 122
-108
+83
 FISH\n
 11
 0.0
 1
 
 TEXTBOX
-85
-209
-131
-227
+84
+208
+130
+226
 SHARKS
 11
 0.0
@@ -227,15 +262,60 @@ FOOD
 1
 
 SLIDER
-26
-234
-197
-267
+25
+233
+196
+266
 initial-shark-population
 initial-shark-population
 1
 10
-5
+6
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+31
+337
+193
+370
+food-rate
+food-rate
+0
+1
+0.2
+.1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+25
+170
+197
+203
+max-fish-age
+max-fish-age
+0
+20
+8
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+24
+269
+196
+302
+max-shark-age
+max-shark-age
+0
+20
+15
 1
 1
 NIL
