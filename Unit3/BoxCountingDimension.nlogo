@@ -435,6 +435,45 @@ end
     plot-pen-up  
   ]
 end
+ 
+  to-report box-counting-dimension
+    report precision(slope)3
+  end 
+   
+   
+   to run-trials
+     file-open "trials-results.csv"
+     file-print (word "\"fractal run\", \"init box len\", \"bc dim\", \"hausdorff dim\"")
+     let fractal-list (list "koch-curve" "levy-curve")
+     let init-box-length-list (list 5 7 10)
+     foreach fractal-list [
+       let fractal-to-run ?
+       foreach init-box-length-list [
+         let init-box-length ?
+         run-trial fractal-to-run init-box-length
+         file-pring (word fractal-to-run ", " init-box-length ", " box-counting-dimension ", " fractal-dim)
+       ]
+     ]
+     file-close
+   end
+   
+   to run-trial [fractal-to-run init-box-length]
+     ;; click fractal button
+     ca
+     set fractal-example fractal-to-run
+     set initial-box-length init-box-length
+     setup
+     ;; click iterate button 5 times
+     repeat 5 [iterate]
+     ;; click box setup button
+     box-counting-setup
+     ;; click box couting go 30 times
+     repeat 10 [box-counting-go]
+     ;; click linear regression button
+     linear-regression
+   end
+     
+     
 @#$#@#$#@
 GRAPHICS-WINDOW
 270
@@ -500,7 +539,7 @@ BUTTON
 311
 Box Counting Go
 box-counting-go
-T
+NIL
 1
 T
 OBSERVER
@@ -533,7 +572,7 @@ MONITOR
 931
 314
 box-counting-dim
-precision(slope)3
+box-counting-dimension
 17
 1
 11
@@ -1128,12 +1167,34 @@ Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 
 @#$#@#$#@
-NetLogo 5.1.0
+NetLogo 5.2.0
 @#$#@#$#@
 ballSetup
 repeat 14 [ go ]
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="3.6.ex.1" repetitions="1" runMetricsEveryStep="false">
+    <setup>bs-setup
+setup
+repeat 5 [iterate]
+box-counting-setup</setup>
+    <go>box-counting-go</go>
+    <final>linear-regression</final>
+    <exitCondition>iteration &gt; 10</exitCondition>
+    <metric>fractal-example</metric>
+    <metric>box-counting-dimension</metric>
+    <metric>fractal-dim</metric>
+    <metric>iteration</metric>
+    <enumeratedValueSet variable="fractal-example">
+      <value value="&quot;koch-curve&quot;"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="initial-box-length">
+      <value value="6"/>
+      <value value="10"/>
+    </enumeratedValueSet>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
