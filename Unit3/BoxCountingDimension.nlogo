@@ -442,16 +442,18 @@ end
    
    
    to run-trials
-     file-open "trials-results.csv"
+     let output-filename "trials-results.csv"
+     if file-exists? output-filename [file-delete output-filename]
+     file-open output-filename
      file-print (word "\"fractal run\", \"init box len\", \"bc dim\", \"hausdorff dim\"")
-     let fractal-list (list "koch-curve" "levy-curve")
-     let init-box-length-list (list 5 7 10)
+     let fractal-list (list "koch-curve" "levy-curve" "sierpinski-triangle" "dragon-curve" "tree" "cantor-dust")
+     let init-box-length-list (list 3 5 7 10)
      foreach fractal-list [
        let fractal-to-run ?
        foreach init-box-length-list [
          let init-box-length ?
          run-trial fractal-to-run init-box-length
-         file-pring (word fractal-to-run ", " init-box-length ", " box-counting-dimension ", " fractal-dim)
+         file-print (word "\"" fractal-to-run "\"" ", " init-box-length ", " box-counting-dimension ", " fractal-dim)
        ]
      ]
      file-close
@@ -467,8 +469,8 @@ end
      repeat 5 [iterate]
      ;; click box setup button
      box-counting-setup
-     ;; click box couting go 30 times
-     repeat 10 [box-counting-go]
+     ;; click box couting go 50 times
+     repeat 30 [box-counting-go]
      ;; click linear regression button
      linear-regression
    end
