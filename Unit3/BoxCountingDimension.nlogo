@@ -65,6 +65,8 @@ to setup
   if (fractal-example = "koch-curve" or fractal-example = "cantor-dust") [set x-cor -150 set y-cor 0 set divisions 3]
   if(fractal-example = "levy-curve" or fractal-example = "dragon-curve") [set x-cor -60 set y-cor 0 set divisions sqrt 2]
   if(fractal-example = "sierpinski-triangle")[set x-cor -100 set y-cor 0]
+  if(fractal-example = "quadratic-1")[set x-cor -150 set y-cor 0 set divisions 3]
+ 
   crt 1 ;creating the initial turtle
   ask turtles [
     ;initializing turtle properties
@@ -113,6 +115,18 @@ to iterate
     set divisions 3 ;the factor by which the length decreases
     set len (len / divisions)
     fractal-dimension  ;calculates & updates fracal dimension
+    tick
+  ]
+  
+  ; creates Quadratic Type 1 curve
+  if fractal-example = "quadratic-1"
+  [
+    ask patches [set pcolor black]
+    ask turtles [ set new? false ]
+    t walk l 90 t walk r 90 t walk r 90 t walk l 90 t walk
+    set divisions 3
+    set len (len / divisions)
+    fractal-dimension
     tick
   ]
   
@@ -535,10 +549,10 @@ fractal-dim
 11
 
 BUTTON
-138
-278
-250
-311
+137
+387
+249
+420
 Box Counting Go
 box-counting-go
 NIL
@@ -580,10 +594,10 @@ box-counting-dimension
 11
 
 MONITOR
-91
-413
-173
-458
+90
+522
+172
+567
 Box Length
 precision(box-size)2
 17
@@ -591,10 +605,10 @@ precision(box-size)2
 11
 
 MONITOR
-26
-413
-92
-458
+25
+522
+91
+567
 NIL
 iteration
 17
@@ -602,10 +616,10 @@ iteration
 11
 
 TEXTBOX
-28
-251
-242
-275
+27
+360
+241
+384
 Box-Counting Controls
 18
 0.0
@@ -653,10 +667,10 @@ Box-Counting Dimension
 1
 
 BUTTON
-73
-184
-187
-233
+72
+293
+186
+342
 NIL
 iterate
 NIL
@@ -670,10 +684,10 @@ NIL
 1
 
 SLIDER
-25
-310
-250
-343
+24
+419
+249
+452
 initial-box-length
 initial-box-length
 .2
@@ -685,10 +699,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-26
-381
-244
-414
+25
+490
+243
+523
 increment
 increment
 0
@@ -802,20 +816,20 @@ NIL
 1
 
 TEXTBOX
-31
-349
-241
-391
+30
+458
+240
+500
 Amount that box lenth increases per iteration of box counting
 11
 0.0
 1
 
 MONITOR
-173
-413
-244
-458
+172
+522
+243
+567
 # of Boxes
 count boxes with [color = red]
 17
@@ -823,10 +837,10 @@ count boxes with [color = red]
 11
 
 BUTTON
-25
-278
-140
-311
+24
+387
+139
+420
 Box Counting Setup
 box-counting-setup
 NIL
@@ -849,6 +863,23 @@ precision(r-square)2
 17
 1
 11
+
+BUTTON
+15
+167
+130
+200
+Quadratic Type 1
+ca\nset fractal-example \"quadratic-1\"\nsetup
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## ## WHAT IS IT?
