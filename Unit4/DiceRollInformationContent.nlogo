@@ -1,11 +1,19 @@
+globals [freq-list val-list]
 to setup
   ca
+  clear-plot
   crt 1 [set shape "dot" set size .1 set color white setxy 6 6 set heading 180
     pd fd 12 rt 90 fd 12 rt 90 fd 12 rt 90 fd 12 die]
+  
+  set result-list ""
+  set freq-list [0 0 0 0 0 0]
+  set val-list []
+  reset-ticks
 end
 
 to go
   roll-die
+  tick
 end
 
 to roll-die
@@ -17,6 +25,10 @@ to roll-die
   if roll = 4 [ draw-die [ [-3 3] [3 3] [-3 -3] [3 -3] ] ]
   if roll = 5 [ draw-die [ [-3 3] [3 3] [0 0] [-3 -3] [3 -3] ] ]
   if roll = 6 [ draw-die [ [-3 3] [-3 0] [3 3] [-3 -3] [3 0] [3 -3] ] ]
+  set result-list word result-list roll
+  increment-freq-list roll
+  set val-list lput roll val-list
+  show freq-list
 end  
 
 to draw-die [$cor-list]
@@ -24,17 +36,21 @@ to draw-die [$cor-list]
     crt 1 [set shape "dot" setxy (first ?) (last ?) set color white set size 5]
   ]
 end
- 
-  
+
+to increment-freq-list [$die-value]
+  let $index $die-value - 1
+  let $cur-freq item $index freq-list
+  set freq-list replace-item $index freq-list ($cur-freq + 1)
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
-392
-10
-637
-262
+646
+14
+911
+300
 8
 8
-13.0
+15.0
 1
 10
 1
@@ -55,10 +71,10 @@ ticks
 30.0
 
 BUTTON
-26
-34
-92
-67
+13
+13
+98
+46
 NIL
 setup\n
 NIL
@@ -72,10 +88,10 @@ NIL
 1
 
 BUTTON
-27
-76
-112
-109
+13
+50
+98
+83
 NIL
 go
 NIL
@@ -87,6 +103,35 @@ NIL
 NIL
 NIL
 1
+
+PLOT
+127
+13
+616
+403
+plot 1
+values
+frequency
+1.0
+7.0
+0.0
+10.0
+true
+false
+"" "histogram val-list"
+PENS
+"default" 1.0 1 -16777216 true "" "histogram val-list"
+
+INPUTBOX
+15
+421
+911
+503
+result-list
+6162412132315463456632216236545361366164621561465654453556543411521611146556621446325116622364462144152354231616435545111164225421664526321146336225252233622454123225366424511111636455556226343535522565324661131251131315543425654331553516334462523335226112356552344233156111554354164533646413664656313
+1
+0
+String
 
 @#$#@#$#@
 ## WHAT IS IT?
