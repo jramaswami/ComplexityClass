@@ -222,7 +222,7 @@ R
 R
 0
 4
-3.51
+4
 0.01
 1
 NIL
@@ -698,10 +698,30 @@ Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 
 @#$#@#$#@
-NetLogo 5.1.0
+NetLogo 5.2.0
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="hwq7" repetitions="1" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <exitCondition>ticks &gt; 1000</exitCondition>
+    <metric>zero-prob</metric>
+    <metric>one-prob</metric>
+    <metric>info-content</metric>
+    <enumeratedValueSet variable="x0">
+      <value value="0.2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="R">
+      <value value="2"/>
+      <value value="3.1"/>
+      <value value="3.49"/>
+      <value value="3.52"/>
+      <value value="4"/>
+    </enumeratedValueSet>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
