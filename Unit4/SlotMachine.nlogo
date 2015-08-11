@@ -14,6 +14,8 @@ to setup
 end 
 
 to go
+  
+  let goal-wait .5
   clear-all-plots
   reset-ticks
   set goal-macrostate 0 set non-macrostate 0 
@@ -36,34 +38,51 @@ to go
       ; We will use this technique below
       
       [wait .01 set goal-macrostate goal-macrostate + 1] [wait .01 set non-macrostate non-macrostate + 1]
-   ]
+    ]
     
     
-  if macrostates = "At least two of the same kind" [
-      ifelse length remove-duplicates [shape] of all-reels < 3
-        [wait .01 set goal-macrostate goal-macrostate + 1] [wait .01 set non-macrostate non-macrostate + 1]
-  ]
+    if macrostates = "At least two of the same kind" [
+        ifelse length remove-duplicates [shape] of all-reels < 3
+          [wait .01 set goal-macrostate goal-macrostate + 1] [wait .01 set non-macrostate non-macrostate + 1]
+    ]
   
+    if macrostates = "Exactly two of the same kind" [
+      ifelse length remove-duplicates [shape] of all-reels = 2
+        [wait goal-wait set goal-macrostate goal-macrostate + 1 
+          ;show [shape] of all-reels
+        ] 
+        [wait .01 set non-macrostate non-macrostate + 1]
+    ]
   
-  if macrostates = "Exactly two pears"  [   
+    if macrostates = "Exactly two pears"  [   
       ifelse length remove "pear" [shape] of all-reels = 1   
         [wait .01 set goal-macrostate goal-macrostate + 1] [wait .01 set non-macrostate non-macrostate + 1]
-   ]
+    ]
    
-  if macrostates = "One orange and one cherry" [
-    ifelse length remove "orange" [shape] of all-reels = 2 and length remove "cherry" [shape] of all-reels  = 2  
-       [wait .04 set goal-macrostate goal-macrostate + 1] [wait .02 set non-macrostate non-macrostate + 1]
-   ]
-  
-  if macrostates = "No apples or cherries" [
-     ifelse  (member? "apple" [shape] of all-reels) or (member? "cherry" [shape] of all-reels)
+    if macrostates = "One orange and one cherry" [
+      ifelse length remove "orange" [shape] of all-reels = 2 and length remove "cherry" [shape] of all-reels  = 2  
+        [wait .01 set goal-macrostate goal-macrostate + 1] [wait .01 set non-macrostate non-macrostate + 1]
+    ]
+    
+    if macrostates = "Two lemons and one orange" [
+      ifelse length remove "lemon" [shape] of all-reels = 1 and length remove "orange" [shape] of all-reels = 2
+        [wait goal-wait set goal-macrostate goal-macrostate + 1] [wait .01 set non-macrostate non-macrostate + 1]
+    ]
+     
+    if macrostates = "No apples or cherries" [
+      ifelse  (member? "apple" [shape] of all-reels) or (member? "cherry" [shape] of all-reels)
         [wait .01 set non-macrostate non-macrostate + 1] [wait .01 set goal-macrostate goal-macrostate + 1] 
-  ]
+    ]
   
+    if macrostates = "No lemons"[
+      ifelse (member? "lemon" [shape] of all-reels) 
+        [wait .01 set non-macrostate non-macrostate + 1] [wait .01 set goal-macrostate goal-macrostate + 1]
+    ]
+    
     if macrostates = "At least one lemon" [
-     ifelse  (member? "lemon" [shape] of all-reels) 
+      ifelse  (member? "lemon" [shape] of all-reels) 
         [wait .01 set goal-macrostate goal-macrostate + 1] [wait .01 set non-macrostate non-macrostate + 1] 
-  ]
+    ]
     
     tick
     
@@ -220,8 +239,8 @@ CHOOSER
 194
 Macrostates
 Macrostates
-"Three of the same kind" "Exactly two pears" "At least two of the same kind" "One orange and one cherry" "No apples or cherries" "At least one lemon"
-5
+"Three of the same kind" "Exactly two pears" "At least two of the same kind" "One orange and one cherry" "No apples or cherries" "At least one lemon" "Exactly two of the same kind" "No lemons" "Two lemons and one orange"
+6
 
 PLOT
 483
@@ -698,7 +717,7 @@ Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 
 @#$#@#$#@
-NetLogo 5.1.0
+NetLogo 5.2.0
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
