@@ -20,42 +20,8 @@ to build-freq-table
 end
 
 to build-huff-tree
-  ;let sorted-keys (merge-sort-keys (table:keys freq-tbl))
-  ;show freq-tbl
-  ;show sorted-keys
   show sort-by [table:get freq-tbl ?1 > table:get freq-tbl ?2] table:keys freq-tbl
-end
-
-to-report merge-sort-keys [$keys]
-  if (length $keys) <= 1 [ report $keys]
-
-  let m int ((length $keys) / 2)
-  let $left sublist $keys 0 (m - 1)
-  let $right sublist $keys m (length $keys)
-  
-  set $left merge-sort-keys $left
-  set $right merge-sort-keys $right
-  
-  let $sorted-keys (merge $left $right)
-  report $sorted-keys
-end
-
-to-report merge [#left #right]
-  let #result []
-  while [length #left > 0 and length #right > 0] [
-    let #lval (table:get freq-tbl (first #left))
-    let #rval (table:get freq-tbl (first #right))
-    ifelse (#lval >= #rval)
-      [set #result lput (first #left) #result  set #left butfirst #left]
-      [set #result lput (first #right) #result  set #right butfirst #right]
-  ]
-  while [length #left > 0] [set #result lput (first #left) #result  set #left butfirst #left]
-  while [length #right > 0] [set #result lput (first #right) #result  set #right butfirst #right]
-  report #result
-    
-end
-    
-    
+end 
 @#$#@#$#@
 GRAPHICS-WINDOW
 25
