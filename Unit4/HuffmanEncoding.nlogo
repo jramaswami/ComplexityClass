@@ -1,12 +1,77 @@
 extensions [table]
 
-globals [freq-tbl]
+globals [freq-tbl code-tbl *LEFT *RIGHT *WEIGHT *LETTER]
 
 to encode
+  set text-to-decode ""
+  ; set constant values needed later
+  set *WEIGHT 0
+  set *LETTER 1
+  set *LEFT 2
+  set *RIGHT 3
+  
   build-freq-table
-  build-huff-tree
+  let #huff-tree build-huff-tree
+  build-code-table #huff-tree
+  
+  let #n 0
+  while [#n < length text-to-encode] [
+    let #l substring text-to-encode #n (#n + 1)
+    set text-to-decode (word text-to-decode encoded-letter #l)
+    set #n #n + 1
+  ]
 end
 
+to-report encoded-letter [$ltr]
+  report table:get code-tbl $ltr
+end
+
+to-report node-vis [$node]
+  let #has-right (is-list? (item *RIGHT $node))
+  let #has-left (is-list? (item *LEFT $node))
+  let #vis (list (item *WEIGHT $node) (item *LETTER $node) #has-left #has-right)
+  report #vis
+end
+
+to walk-tree [$tree]
+  let #head node-vis $tree
+end
+
+to build-code-table [$huff-tree]
+  set code-tbl table:make
+  code-tree "" $huff-tree
+end
+
+to code-tree [binary-code $node]
+  ;; recursive procedure to walk tree
+  ;; to leaf nodes and then record letter
+  ;; and binary code in the code-tbl
+  
+  ;; if the node does not have a letter
+  ;; then recursively continue the walk
+  ;; by calling code-tree on left and
+  ;; right nodes held by the curren node
+  
+
+  ifelse item *LETTER $node = "" [
+    code-tree (word binary-code "0") (item *LEFT $node)
+    code-tree (word binary-code "1") (item *RIGHT $node) 
+  ]
+  [ ;; else
+    ;; the node has a letter in it
+    ;; then it is a leaf node -- add
+    ;; the letter and code to the 
+    ;; code-tbl 
+    ifelse binary-code = ""
+      ;; found leaf node immediately so put in a 0
+      ;; in the code-tbl
+      [table:put code-tbl (item *LETTER $node) "0"]
+      ;; found leaf node, record letter and code
+      ;; in the code-tbl
+      [table:put code-tbl (item *LETTER $node) binary-code]
+  ] ;; end if
+end
+    
 to build-freq-table
   set freq-tbl table:make
   let n 0
@@ -19,9 +84,98 @@ to build-freq-table
   ]
 end
 
-to build-huff-tree
-  show sort-by [table:get freq-tbl ?1 > table:get freq-tbl ?2] table:keys freq-tbl
+to-report build-huff-tree
+  ;; get sorted keys and put them in a list, 
+  ;; the list that will become our encoding tree
+  let #tree sort-by [table:get freq-tbl ?1 < table:get freq-tbl ?2] table:keys freq-tbl
+  
+  while [(length #tree) > 1] [
+    let #left first #tree
+    set #tree butfirst #tree
+    let #right first #tree
+    set #tree butfirst #tree
+    let #subtree make-subtree #left #right
+    set #tree insert-into-tree #tree #subtree
+  ]
+  ;; the build process left us with a
+  ;; list wrapped around the first node,
+  ;; so just return the first node
+  report item 0 #tree
 end 
+
+to-report make-subtree [$k1 $k2]
+  ;; set #left-node to $k1
+  let #left-node $k1
+  ;; replace it with a new node if
+  ;; $k1 isn't a node but is a key
+  if not is-list? $k1 
+    [ set #left-node new-node (get-weight $k1) $k1 false false ]
+    
+  ;; same goes for $k2
+  let #right-node $k2 
+  if not is-list? $k2
+    [ set #right-node new-node (get-weight $k2) $k2 false false]  
+  let #weight ((get-weight $k1) + (get-weight $k2))
+  let #subtree new-node #weight "" #left-node #right-node
+  report #subtree
+end
+  
+to-report new-node [$weight $letter $left $right]
+  let #node (list $weight $letter $left $right)
+  report #node
+end
+
+to-report get-weight [$node]
+  let #result -1
+  ifelse is-list? $node
+    ;; if the item is a tree, report weight
+    [ set #result (item *WEIGHT $node) ]
+    ;; else item is a key-value, so go to
+    ;; freq-tbl to get the freq --> weight
+    [ set #result (table:get freq-tbl $node) ]
+    
+    report #result
+end
+
+to-report insert-into-tree [$list $node]
+  ;; find the node in the tree that has the
+  ;; greatest value
+  let #n 0
+  let #continue? true
+  while [#n < (length $list) and #continue?] [
+    let $list-item (item #n $list)
+    if get-weight $list-item > get-weight $node [set #continue? false]
+    if #continue? [set #n (#n + 1)]
+  ]
+  
+  let #new-list []  
+  ifelse #continue? [
+    ;; we fell out of list without finding
+    ;; a node with greater weight; the
+    ;; $node has the greatest weight so
+    ;; put it at the end of the list
+    set #new-list lput $node $list
+  ] 
+  [ ;; else
+    ;; loop through to build a new list
+    ;; but put $node in before the item
+    ;; that was of greater weight
+    let #m 0
+    foreach $list [
+      if (#m = #n) [set #new-list lput $node #new-list]
+      set #new-list lput ? #new-list
+      set #m (#m + 1)
+    ] ;; end foreach
+  ] ;; end if
+  report #new-list
+end
+
+to-report read-header
+  ;; TODO: i should be able to use write and 
+  ;; read-from-string to write the header and
+  ;; then read it back in for decoding
+  report ""
+end
 @#$#@#$#@
 GRAPHICS-WINDOW
 25
@@ -49,23 +203,6 @@ GRAPHICS-WINDOW
 1
 ticks
 30.0
-
-BUTTON
-75
-493
-141
-526
-NIL
-setup\n
-NIL
-1
-T
-OBSERVER
-NIL
-NIL
-NIL
-NIL
-1
 
 BUTTON
 500
@@ -101,7 +238,7 @@ INPUTBOX
 1149
 231
 text-to-decode
-NIL
+00001100001001011100111100100111110111100010110111011100011011110011001111010
 1
 0
 String
