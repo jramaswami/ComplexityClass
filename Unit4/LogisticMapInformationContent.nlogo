@@ -11,6 +11,7 @@ to setup
   set num-turtles-created -1; first turtle created will be number 0
   draw-axes
   draw-parabola 
+  draw-threshold-mark
            
   set x-current x0
   set x-new (R * x-current * (1 - x-current))  ; logistic map
@@ -60,7 +61,7 @@ end
 
 to update-info-content
  ; Update variables for measuring information content
-  ifelse (x-new < 0.5) 
+  ifelse (x-new < threshold-value) 
     [
     set current-symbol 0
     set num-zeros (num-zeros + 1)
@@ -125,7 +126,17 @@ to draw-parabola  ; draws parabola representing logistic map for given value of 
   ask turtles [die]
 end
 
-
+to draw-threshold-mark
+  create-turtles 1
+  set num-turtles-created num-turtles-created + 1
+  ask turtles [
+    set color red
+    set xcor (threshold-value * max-pxcor)
+    set ycor (R * threshold-value * (1 - threshold-value)) * max-pycor
+    set shape "dot"
+    set size 2
+  ]
+end
 
     
 ;;plotting procedures -------------------
@@ -214,10 +225,10 @@ NIL
 1
 
 SLIDER
-16
-99
-188
-132
+11
+113
+183
+146
 R
 R
 0
@@ -229,10 +240,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-16
-131
-188
-164
+11
+145
+183
+178
 x0
 x0
 0
@@ -244,10 +255,10 @@ NIL
 HORIZONTAL
 
 PLOT
-10
-254
-379
-383
+12
+287
+381
+416
 logistic map
 time t (* 10)
 x_t
@@ -262,10 +273,10 @@ PENS
 "initial condition x0" 0.1 0 -13345367 true "" ""
 
 MONITOR
-26
-168
-101
-213
+11
+238
+86
+283
 x_t
 x-current
 8
@@ -273,10 +284,10 @@ x-current
 11
 
 MONITOR
-99
-168
-172
-213
+84
+238
+157
+283
 x_{t+1}
 x-new
 8
@@ -284,10 +295,10 @@ x-new
 11
 
 PLOT
-10
-383
-378
-521
+12
+416
+380
+554
 information content
 time (* 10)
 H (estimated)
@@ -383,6 +394,21 @@ Logistic Map:  Shannon Information Content of Symbolic Dynamics
 18
 95.0
 1
+
+SLIDER
+11
+181
+183
+214
+threshold-value
+threshold-value
+0
+1
+0.5
+0.1
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
@@ -712,6 +738,29 @@ NetLogo 5.2.0
     <metric>info-content</metric>
     <enumeratedValueSet variable="x0">
       <value value="0.2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="R">
+      <value value="2"/>
+      <value value="3.1"/>
+      <value value="3.49"/>
+      <value value="3.52"/>
+      <value value="4"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="hwqi4" repetitions="1" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go</go>
+    <exitCondition>ticks &gt; 1000</exitCondition>
+    <metric>zero-prob</metric>
+    <metric>one-prob</metric>
+    <metric>info-content</metric>
+    <enumeratedValueSet variable="x0">
+      <value value="0.2"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="threshold-value">
+      <value value="0.25"/>
+      <value value="0.5"/>
+      <value value="0.75"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="R">
       <value value="2"/>
