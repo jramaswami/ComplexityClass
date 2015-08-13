@@ -4,22 +4,49 @@ globals [freq-tbl code-tbl *LEFT *RIGHT *WEIGHT *LETTER]
 
 to encode
   set text-to-decode ""
+  set binary-encoding ""
+  set header ""
   ; set constant values needed later
   set *WEIGHT 0
   set *LETTER 1
   set *LEFT 2
   set *RIGHT 3
   
+  ;; build a table of the
+  ;; frequency of each symbol
+  ;; in the text-to-encode
   build-freq-table
+  
+  ;; build huffman encoding
+  ;; tree using the frequency 
+  ;; table
   let #huff-tree build-huff-tree
+  
+  ;; then build a code table
+  ;; for use during the encryption
+  ;; process
   build-code-table #huff-tree
   
+  ;; iterate through and encode
+  ;; each symbol in the 
+  ;; text-to-encode
   let #n 0
   while [#n < length text-to-encode] [
     let #l substring text-to-encode #n (#n + 1)
+    ;; first in the huffman code
     set text-to-decode (word text-to-decode encoded-letter #l)
+    ;; then in binary
+    set binary-encoding (word binary-encoding binary-encoded-letter #l)
     set #n #n + 1
   ]
+  
+  ;; create the header needed to
+  ;; decode the huffman encoded
+  ;; text
+  let #huff-header huffman-header
+  set header #huff-header
+  
+  show code-tbl
 end
 
 to-report encoded-letter [$ltr]
@@ -38,6 +65,10 @@ to walk-tree [$tree]
 end
 
 to build-code-table [$huff-tree]
+  ;; procedure to initialize
+  ;; code table and then 
+  ;; call recursive procedure
+  ;; to build it
   set code-tbl table:make
   code-tree "" $huff-tree
 end
@@ -50,9 +81,7 @@ to code-tree [binary-code $node]
   ;; if the node does not have a letter
   ;; then recursively continue the walk
   ;; by calling code-tree on left and
-  ;; right nodes held by the curren node
-  
-
+  ;; right nodes held by the current node
   ifelse item *LETTER $node = "" [
     code-tree (word binary-code "0") (item *LEFT $node)
     code-tree (word binary-code "1") (item *RIGHT $node) 
@@ -171,17 +200,157 @@ to-report insert-into-tree [$list $node]
 end
 
 to-report read-header
-  ;; TODO: i should be able to use write and 
-  ;; read-from-string to write the header and
-  ;; then read it back in for decoding
+  ;; read the first byte to 
+  ;; find out how many bits
+  ;; encode the frequency
   report ""
+end
+
+to-report binary-encoded-letter [$ltr]
+  let #ascii ascii-code $ltr
+  let #bin-code decimal-to-binary #ascii
+  report #bin-code
+end
+
+to-report decimal-to-binary [$dec]
+  let #bin ""
+  while [$dec > 0] [
+    let #n int ($dec / 2)
+    let #m ($dec mod 2)
+    ifelse #m = 0
+      [ set #bin word "0" #bin]
+      [ set #bin word "1" #bin]
+    set $dec #n
+  ]
+  report #bin
+end
+
+to-report binary-to-decimal [$bin]
+  let #dec 0
+  let #b $bin
+  let #bit read-from-string last #b
+  set #dec (#dec + #bit)
+  set #b but-last #b
+  let #m 1
+  while [length #b > 0] [
+    set #bit read-from-string last #b
+    set #dec (#dec + (#bit * 2 ^ #m))
+    set #m (#m + 1)
+    set #b but-last #b
+  ]
+  report #dec
+end
+
+to-report ascii-code [$ltr]
+  ;; function to report the 
+  ;; ascii code for a given 
+  ;; symbol; does not include
+  ;; any of the non-printable
+  ;; symbols
+  let #ascii "!#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+  ifelse member? $ltr #ascii
+    [report ((position $ltr #ascii) + 32)]
+    [report 0]
+end
+
+to-report huffman-header
+  ;; function to create the
+  ;; binary header that can
+  ;; be used to decode the
+  ;; huffman encoded text
+  
+  ;; first find out how many
+  ;; are needed to encode symbol
+  ;; frequencies
+  ;; then create a byte that holds
+  ;; that information
+  let #bin-code-freq-len binary-code-for-freq-length
+  ;; TODO clean this up so we're not translating back to decimal
+  let #freq-bits binary-to-decimal #bin-code-freq-len
+  let #header bits-to-byte #bin-code-freq-len
+  
+  ;; then find out how many symbols
+  ;; there are and encode that in 
+  ;; a byte so the reader knows when
+  ;; header ends and data starts
+  set #header (word #header binary-code-for-symbol-count)
+  
+  ;; now loop over freq-tbl
+  foreach table:keys freq-tbl [
+    ;; now encode first the symbol as
+    ;; a byte
+    let #symbol-bin-code bits-to-byte decimal-to-binary ascii-code ?
+    set #header (word #header #symbol-bin-code)
+    
+    ;; then encode the frequency of the
+    ;; symbol in the determined number
+    ;; of bits
+    let #freq-bin-code pad-bits (decimal-to-binary (table:get freq-tbl ?)) #freq-bits
+    set #header (word #header #freq-bin-code)
+  ]
+  
+  ;; TODO:
+  ;; we could try to encode the 
+  ;; tree by figuring out how man bits
+  ;; are necessary for the value portion
+  ;; of the tree encoding that in
+  ;; binary
+  
+  ;; then encode a 0 for a node
+  ;; encode 1 followed by 
+  ;; the value in bits for 
+  ;; a leaf
+  
+  ;; the walk should be similar
+  ;; to code-tree
+  
+  report #header
+end
+
+to-report binary-code-for-freq-length
+  let #max-freq get-max-freq
+  let #bin-max-freq decimal-to-binary #max-freq
+  let #len length #bin-max-freq
+  let #bin-code-for-freq-len decimal-to-binary #len
+  report #bin-code-for-freq-len 
+end
+
+to-report binary-code-for-symbol-count
+  let #sym-count (length (table:keys freq-tbl))
+  report bits-to-byte decimal-to-binary #sym-count
+end
+
+to-report get-max-freq 
+  ;; function to find the 
+  ;; maximum frequency 
+  ;; in the frequency table
+  let #max-freq 0
+  foreach table:keys freq-tbl [
+    if table:get freq-tbl ? > #max-freq [set #max-freq table:get freq-tbl ?]
+  ]
+  report int #max-freq
+end
+
+to-report pad-bits [$bits $pad-length]
+  let #padding $pad-length - (length $bits)
+  let #n 0
+  let #byte $bits
+  while [#n < #padding] [
+    set #byte (word "0" #byte)
+    set #n (#n + 1)
+  ]
+  report #byte
+end
+
+to-report bits-to-byte [$bits]
+  report pad-bits $bits 8
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-25
-269
-270
-473
+790
+10
+1035
+214
 16
 16
 5.242424242424242
@@ -205,10 +374,10 @@ ticks
 30.0
 
 BUTTON
-500
-236
-577
-269
+590
+11
+667
+44
 NIL
 encode\n
 NIL
@@ -225,29 +394,29 @@ INPUTBOX
 33
 10
 579
-231
+123
 text-to-encode
-Mary had a little lamb
+Magnus Carlsen’s meteoric rise to the top ranked player in the world (at age 19), the highest chess rating in history (age 22), and as of a few days ago, the title of World Chess Champion (age 22) has brought with it a renewed interest in chess. This is exciting, because Carlsen represents the first real hope of renewing chess’s mass appeal since the days of Bobby Fischer1.
 1
 0
 String
 
 INPUTBOX
-599
-10
-1149
-231
+32
+133
+582
+246
 text-to-decode
-00001100001001011100111100100111110111100010110111011100011011110011001111010
+001000101010001010001100010111001111011111101000111101101100010000100001101100111101100001010010101101000110111110111111001101111100010111100111010111100101100101111001110101011011110011101000010010001101010111011110110111011010101000000100011111011100011111001011001011110000111010001111011010111011110110011010100111110100010101011100001110010010010111100000001111001011001011101100111001010110010110010011111101110110010110011001110011101010010111000100101111011100011110110011111001001110100011100000111101100110100010101011100000100000110111100000001111010000110111011110101100111110101000111111010111100011010100001111101110101010000011001111010001011101000000011110010110010111100101111001110110010111110101000111110010010111010001111011010111011110111110110010110011001111011111011010101011000101101011111010000111110110011010001010101110000010000011011110111011010101100111000010001111010100010100101011010011111000010111100101101110111100111110101110011010000101010000101010111011101110001100101000110101100100111101110001111110111011001011001100001000011100100110011001111100111011111001110100010011111011101111001011100010010100000011100001001011011110101000101110001011110111111010001111011011000100001111001101010110100110101100010000110011100111100101100101111000110111001111001001111001101010101101101110110110101011010101111101010001111100110100001010100001011100010010111111011101100101100110000001101100111101100010101100110011110101011011011010101010110110111110001110001110111010111100101100101111011101010100000110011111010100011111100010001101000001000001010000011110001001011111001101110110010001100001110010000
 1
 0
 String
 
 BUTTON
-1070
-239
-1147
-272
+588
+258
+665
+291
 NIL
 decode\n
 NIL
@@ -261,12 +430,23 @@ NIL
 1
 
 INPUTBOX
-602
-299
-1152
-442
+30
+256
+580
+363
 header
-NIL
+0000011100100101010010110000001010111110011000011001010001010011011000010001011100110000011011100010011111000000001000011010000010000100011100000010011011010100001000011000110101001000000000000010011010110000011011100100010111011011010001111011001110010101011000010001000011001100010100011011100000111011010010000001011000100000111011101110000101011101010000101001001100000011001011110000010001101110000001001001110000011001010100000100001100000000100011001000000110010101010000001011000000000100001011000000010010100100000001011101100000001010000000000001010001000000001
+1
+0
+String
+
+INPUTBOX
+30
+370
+585
+482
+binary-encoding
+100101110111111100101110110011100111110001100000110111111110000110101011100011100011110110011100011101011110001111100101100011110110111100001100111110000111100001100111111000111000111110010110110111100101100110110001111100101101101110111011100001011111110110011010011100011110001011011101101010101111111101111100011111000011001111101100111001011001101100011111010111011011110000110101011000101001101011111111001010111111100101110001110111111011110011110101011100101100110110001111001101100111110010111001101100011111000111100101100001110011011000111110001111000111100001011111111001011001111101100110010111001111101100110011011001111110001111001011011011110000111011110011010111111100101110001111000011000010011110101010111111101100110001010111111110001110110111001001011111110010011000111110101110001010111111110111111000110111111100101110110110101011100101100110110001111100101100111111001011010101100011110110111001001010101110110111100001101010110001010000011100110110001111100011110001100000111001101011111110101111011101100111110110111011001001101011111110010111000111100001100001001111100110101111111100011100000111000011011011110011110010111001101110010111010111001111110010110011011001111110010101111111100001100011110110011000111110101110001111000101100111110110011100101100011111000011000111110001111001011001111101100110000111001101100011111000111100011011001010010110011011001111110001110011111100011100011111011011000011100111111001011001111101100110010110101011000001100011110000110111111110011111000111000111000001101111111100001101010111000111000111101100111000011000111101110111000011000111110001110001111011001110010111000111100101100110110001111001001100111111000011100011110010111000011000111011111110101011001101101101110111011000111101101110010011100001100011110110011000111110101110011111011001100101110000111001101100011111000111100011110001110101110111111110001111000110111111101110110111011000111011111110101011100011100111110110011000011100011111001011001101100011110001010111111110111111000111011011100100100000011011011100000110000011101111000100110011111100011100001110011011000111110000101111101100
 1
 0
 String
