@@ -2,9 +2,17 @@ extensions [table]
 
 globals [freq-tbl code-tbl *LEFT *RIGHT *WEIGHT *LETTER]
 
+to reset
+  set huffman-encoded-text ""
+  set binary-encoded-text ""
+  set header ""
+  set text-to-encode ""
+  set decoded-text ""
+end
+
 to encode
-  set text-to-decode ""
-  set binary-encoding ""
+  set huffman-encoded-text ""
+  set binary-encoded-text ""
   set header ""
   ; set constant values needed later
   set *WEIGHT 0
@@ -15,17 +23,17 @@ to encode
   ;; build a table of the
   ;; frequency of each symbol
   ;; in the text-to-encode
-  build-freq-table
+  set freq-tbl (build-freq-table text-to-encode)
   
   ;; build huffman encoding
   ;; tree using the frequency 
   ;; table
-  let #huff-tree build-huff-tree
+  let #huff-tree build-huff-tree freq-tbl
   
   ;; then build a code table
   ;; for use during the encryption
   ;; process
-  build-code-table #huff-tree
+  set code-tbl build-code-table #huff-tree
   
   ;; iterate through and encode
   ;; each symbol in the 
@@ -34,9 +42,9 @@ to encode
   while [#n < length text-to-encode] [
     let #l substring text-to-encode #n (#n + 1)
     ;; first in the huffman code
-    set text-to-decode (word text-to-decode encoded-letter #l)
+    set huffman-encoded-text (word huffman-encoded-text encoded-letter #l)
     ;; then in binary
-    set binary-encoding (word binary-encoding binary-encoded-letter #l)
+    set binary-encoded-text (word binary-encoded-text binary-encoded-letter #l)
     set #n #n + 1
   ]
   
@@ -45,8 +53,35 @@ to encode
   ;; text
   let #huff-header huffman-header
   set header #huff-header
+end
+
+to decode
+  let #header header
   
-  show code-tbl
+  ;; read first bit of header 
+  ;; to find out what kind of 
+  ;; header will be read, 
+  ;; tree (0) or frequency table (1)
+  let #header-type-bit first #header
+  set #header but-first #header
+  
+  let #freq-tbl table:make
+  ifelse #header-type-bit = "0"
+    [ read-tree-header #header ]
+    [ ;; else
+      ;; it is a frequency table header
+      ;; so we need to read in the frequency
+      ;; table
+      set #freq-tbl read-frequency-table-header #header 
+      ;; now we have build our huffman tree
+      ;; table
+      let #h-tree build-huff-tree #freq-tbl
+      
+      ;; TODO walk tree to find letter
+      
+      ]
+    
+    
 end
 
 to-report encoded-letter [$ltr]
@@ -64,27 +99,28 @@ to walk-tree [$tree]
   let #head node-vis $tree
 end
 
-to build-code-table [$huff-tree]
+to-report build-code-table [$huff-tree]
   ;; procedure to initialize
   ;; code table and then 
   ;; call recursive procedure
   ;; to build it
-  set code-tbl table:make
-  code-tree "" $huff-tree
+  let #code-tbl table:make
+  walk-tree-to-build-code-table "" $huff-tree #code-tbl
+  report #code-tbl
 end
 
-to code-tree [binary-code $node]
+to walk-tree-to-build-code-table [binary-code $node $code-tbl]
   ;; recursive procedure to walk tree
   ;; to leaf nodes and then record letter
-  ;; and binary code in the code-tbl
+  ;; and binary code in a code-tbl
   
   ;; if the node does not have a letter
   ;; then recursively continue the walk
   ;; by calling code-tree on left and
   ;; right nodes held by the current node
   ifelse item *LETTER $node = "" [
-    code-tree (word binary-code "0") (item *LEFT $node)
-    code-tree (word binary-code "1") (item *RIGHT $node) 
+    walk-tree-to-build-code-table (word binary-code "0") (item *LEFT $node) $code-tbl
+    walk-tree-to-build-code-table (word binary-code "1") (item *RIGHT $node) $code-tbl
   ]
   [ ;; else
     ;; the node has a letter in it
@@ -94,29 +130,30 @@ to code-tree [binary-code $node]
     ifelse binary-code = ""
       ;; found leaf node immediately so put in a 0
       ;; in the code-tbl
-      [table:put code-tbl (item *LETTER $node) "0"]
+      [table:put $code-tbl (item *LETTER $node) "0"]
       ;; found leaf node, record letter and code
       ;; in the code-tbl
-      [table:put code-tbl (item *LETTER $node) binary-code]
+      [table:put $code-tbl (item *LETTER $node) binary-code]
   ] ;; end if
 end
     
-to build-freq-table
-  set freq-tbl table:make
+to-report build-freq-table [$text]
+  let #freq-tbl table:make
   let n 0
-  while [n < (length text-to-encode)] [
-    let ltr (substring text-to-encode n (n + 1))
-    ifelse table:has-key? freq-tbl ltr
-      [ table:put freq-tbl ltr ( (table:get freq-tbl ltr) + 1) ]
-      [ table:put freq-tbl ltr 1]
+  while [n < (length $text)] [
+    let ltr (substring $text n (n + 1))
+    ifelse table:has-key? #freq-tbl ltr
+      [ table:put #freq-tbl ltr ( (table:get #freq-tbl ltr) + 1) ]
+      [ table:put #freq-tbl ltr 1]
     set n (n + 1)
   ]
+  report #freq-tbl
 end
 
-to-report build-huff-tree
+to-report build-huff-tree [$freq-tbl]
   ;; get sorted keys and put them in a list, 
   ;; the list that will become our encoding tree
-  let #tree sort-by [table:get freq-tbl ?1 < table:get freq-tbl ?2] table:keys freq-tbl
+  let #tree sort-by [table:get $freq-tbl ?1 < table:get $freq-tbl ?2] table:keys $freq-tbl
   
   while [(length #tree) > 1] [
     let #left first #tree
@@ -199,11 +236,38 @@ to-report insert-into-tree [$list $node]
   report #new-list
 end
 
-to-report read-header
-  ;; read the first byte to 
-  ;; find out how many bits
-  ;; encode the frequency
-  report ""
+to read-tree-header [$header]
+end
+
+to-report read-frequency-table-header [$header]
+  let #freq-tbl table:make
+  
+  ;; read first byte to find out how many
+  ;; bits encode the frequency
+  let #frequency-length-byte substring $header 0 8
+  let #frequency-length binary-to-decimal #frequency-length-byte
+  
+  ;; read second byte to find out how many
+  ;; entries there are in the frequency table
+  let #entry-count-byte substring $header 8 16
+  let #entry-count binary-to-decimal #entry-count-byte
+  
+  ;; check header
+  let #header-length 16 + (7 + #frequency-length) * #entry-count
+  if length $header != #header-length
+    [show "Incorrect header length" stop]
+  
+  
+  let #n 16
+  while [#n < #header-length] [
+    let #symbol-bits substring $header #n (#n + 7)
+    let #frequency-bits substring $header (#n + 7) (#n + 7 + #frequency-length)
+    let #symbol from-ascii binary-to-decimal #symbol-bits
+    let #frequency binary-to-decimal #frequency-bits
+    table:put #freq-tbl #symbol #frequency
+    set #n (#n + 7 + #frequency-length)
+  ]
+  report #freq-tbl
 end
 
 to-report binary-encoded-letter [$ltr]
@@ -245,12 +309,37 @@ to-report ascii-code [$ltr]
   ;; function to report the 
   ;; ascii code for a given 
   ;; symbol; does not include
-  ;; any of the non-printable
+  ;; all of the non-printable
   ;; symbols
+  
+  if $ltr = "\t" [report 9]
+  if $ltr = "\n" [report 10]
+  if $ltr = "\r" [report 13]
+  if $ltr = " " [report 32]
+
   let #ascii "!#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
   ifelse member? $ltr #ascii
     [report ((position $ltr #ascii) + 32)]
     [report 0]
+
+end
+
+to-report from-ascii [$ascii-code]
+  ;; function to report the 
+  ;; ascii code for a given 
+  ;; symbol; does not include
+  ;; all of the non-printable
+  ;; symbols
+  if $ascii-code = 9 [report "\t"]
+  if $ascii-code = 10 [report "\n"]
+  if $ascii-code = 13 [report "\r"]
+  if $ascii-code = 32 [report " "]
+  
+  let #ascii "!#$%&'()*+,-./0123456789:;<=>?@ABCDEFGHIJKLMNOPQRSTUVWXYZ[\\]^_`abcdefghijklmnopqrstuvwxyz{|}~"
+  ifelse $ascii-code > 31 and $ascii-code < (32 + (length #ascii))
+    [report substring #ascii ($ascii-code - 32) ($ascii-code - 32 + 1)]
+    [report ""]
+
 end
 
 to-report huffman-header
@@ -258,8 +347,19 @@ to-report huffman-header
   ;; binary header that can
   ;; be used to decode the
   ;; huffman encoded text
-  
-  ;; first find out how many
+  let #header ""
+  ifelse huffman-header-type = "frequency table header"
+    [ set #header build-frequency-table-header ]
+    [ set #header tree-header ]
+  report #header
+end
+
+to-report build-frequency-table-header
+  ;; first put a single bit to indicate
+  ;; the header type
+  ;; 1 for the frequency table header
+  let #header "1"
+  ;; find out how many
   ;; are needed to encode symbol
   ;; frequencies
   ;; then create a byte that holds
@@ -267,7 +367,7 @@ to-report huffman-header
   let #bin-code-freq-len binary-code-for-freq-length
   ;; TODO clean this up so we're not translating back to decimal
   let #freq-bits binary-to-decimal #bin-code-freq-len
-  let #header bits-to-byte #bin-code-freq-len
+  set #header (word #header bits-to-byte #bin-code-freq-len)
   
   ;; then find out how many symbols
   ;; there are and encode that in 
@@ -278,8 +378,9 @@ to-report huffman-header
   ;; now loop over freq-tbl
   foreach table:keys freq-tbl [
     ;; now encode first the symbol as
-    ;; a byte
-    let #symbol-bin-code bits-to-byte decimal-to-binary ascii-code ?
+    ;; 7 bits since ascii is less 
+    ;; than 128 decimal
+    let #symbol-bin-code pad-bits (decimal-to-binary ascii-code ?) 7
     set #header (word #header #symbol-bin-code)
     
     ;; then encode the frequency of the
@@ -288,7 +389,11 @@ to-report huffman-header
     let #freq-bin-code pad-bits (decimal-to-binary (table:get freq-tbl ?)) #freq-bits
     set #header (word #header #freq-bin-code)
   ]
-  
+  report #header
+end
+
+to-report tree-header
+  let #header ""
   ;; TODO:
   ;; we could try to encode the 
   ;; tree by figuring out how man bits
@@ -347,10 +452,10 @@ to-report bits-to-byte [$bits]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-790
-10
-1035
-214
+212
+352
+457
+556
 16
 16
 5.242424242424242
@@ -374,10 +479,10 @@ ticks
 30.0
 
 BUTTON
-590
-11
-667
-44
+8
+126
+85
+159
 NIL
 encode\n
 NIL
@@ -391,32 +496,32 @@ NIL
 1
 
 INPUTBOX
-33
+7
 10
-579
+553
 123
 text-to-encode
-Magnus Carlsen’s meteoric rise to the top ranked player in the world (at age 19), the highest chess rating in history (age 22), and as of a few days ago, the title of World Chess Champion (age 22) has brought with it a renewed interest in chess. This is exciting, because Carlsen represents the first real hope of renewing chess’s mass appeal since the days of Bobby Fischer1.
+NIL
 1
 0
 String
 
 INPUTBOX
-32
-133
-582
-246
-text-to-decode
-001000101010001010001100010111001111011111101000111101101100010000100001101100111101100001010010101101000110111110111111001101111100010111100111010111100101100101111001110101011011110011101000010010001101010111011110110111011010101000000100011111011100011111001011001011110000111010001111011010111011110110011010100111110100010101011100001110010010010111100000001111001011001011101100111001010110010110010011111101110110010110011001110011101010010111000100101111011100011110110011111001001110100011100000111101100110100010101011100000100000110111100000001111010000110111011110101100111110101000111111010111100011010100001111101110101010000011001111010001011101000000011110010110010111100101111001110110010111110101000111110010010111010001111011010111011110111110110010110011001111011111011010101011000101101011111010000111110110011010001010101110000010000011011110111011010101100111000010001111010100010100101011010011111000010111100101101110111100111110101110011010000101010000101010111011101110001100101000110101100100111101110001111110111011001011001100001000011100100110011001111100111011111001110100010011111011101111001011100010010100000011100001001011011110101000101110001011110111111010001111011011000100001111001101010110100110101100010000110011100111100101100101111000110111001111001001111001101010101101101110110110101011010101111101010001111100110100001010100001011100010010111111011101100101100110000001101100111101100010101100110011110101011011011010101010110110111110001110001110111010111100101100101111011101010100000110011111010100011111100010001101000001000001010000011110001001011111001101110110010001100001110010000
+675
+121
+1225
+234
+huffman-encoded-text
+NIL
 1
 0
 String
 
 BUTTON
-588
-258
-665
+1133
 291
+1210
+324
 NIL
 decode\n
 NIL
@@ -430,26 +535,119 @@ NIL
 1
 
 INPUTBOX
-30
-256
-580
-363
+674
+10
+1224
+117
 header
-0000011100100101010010110000001010111110011000011001010001010011011000010001011100110000011011100010011111000000001000011010000010000100011100000010011011010100001000011000110101001000000000000010011010110000011011100100010111011011010001111011001110010101011000010001000011001100010100011011100000111011010010000001011000100000111011101110000101011101010000101001001100000011001011110000010001101110000001001001110000011001010100000100001100000000100011001000000110010101010000001011000000000100001011000000010010100100000001011101100000001010000000000001010001000000001
+NIL
 1
 0
 String
 
 INPUTBOX
-30
-370
-585
-482
-binary-encoding
-100101110111111100101110110011100111110001100000110111111110000110101011100011100011110110011100011101011110001111100101100011110110111100001100111110000111100001100111111000111000111110010110110111100101100110110001111100101101101110111011100001011111110110011010011100011110001011011101101010101111111101111100011111000011001111101100111001011001101100011111010111011011110000110101011000101001101011111111001010111111100101110001110111111011110011110101011100101100110110001111001101100111110010111001101100011111000111100101100001110011011000111110001111000111100001011111111001011001111101100110010111001111101100110011011001111110001111001011011011110000111011110011010111111100101110001111000011000010011110101010111111101100110001010111111110001110110111001001011111110010011000111110101110001010111111110111111000110111111100101110110110101011100101100110110001111100101100111111001011010101100011110110111001001010101110110111100001101010110001010000011100110110001111100011110001100000111001101011111110101111011101100111110110111011001001101011111110010111000111100001100001001111100110101111111100011100000111000011011011110011110010111001101110010111010111001111110010110011011001111110010101111111100001100011110110011000111110101110001111000101100111110110011100101100011111000011000111110001111001011001111101100110000111001101100011111000111100011011001010010110011011001111110001110011111100011100011111011011000011100111111001011001111101100110010110101011000001100011110000110111111110011111000111000111000001101111111100001101010111000111000111101100111000011000111101110111000011000111110001110001111011001110010111000111100101100110110001111001001100111111000011100011110010111000011000111011111110101011001101101101110111011000111101101110010011100001100011110110011000111110101110011111011001100101110000111001101100011111000111100011110001110101110111111110001111000110111111101110110111011000111011111110101011100011100111110110011000011100011111001011001101100011110001010111111110111111000111011011100100100000011011011100000110000011101111000100110011111100011100001110011011000111110000101111101100
+2
+231
+557
+343
+binary-encoded-text
+NIL
 1
 0
 String
+
+CHOOSER
+93
+127
+283
+172
+huffman-header-type
+huffman-header-type
+"tree header" "frequency table header"
+1
+
+MONITOR
+674
+239
+868
+284
+Length of Huffman Encoded Text
+length huffman-encoded-text
+17
+1
+11
+
+MONITOR
+290
+126
+431
+171
+Length of Text
+length text-to-encode
+17
+1
+11
+
+MONITOR
+873
+239
+992
+284
+Length of Header
+length header
+17
+1
+11
+
+MONITOR
+3
+349
+183
+394
+Length of Binary Encoded Text
+length binary-encoded-text
+17
+1
+11
+
+MONITOR
+999
+239
+1210
+284
+Length of Header + H. Encoded Text
+length header + length huffman-encoded-text
+17
+1
+11
+
+INPUTBOX
+673
+368
+1224
+525
+decoded-text
+NIL
+1
+0
+String
+
+BUTTON
+447
+128
+510
+161
+NIL
+reset
+NIL
+1
+T
+OBSERVER
+NIL
+NIL
+NIL
+NIL
+1
 
 @#$#@#$#@
 ## WHAT IS IT?
