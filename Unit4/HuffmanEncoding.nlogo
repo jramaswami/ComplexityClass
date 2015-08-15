@@ -1,6 +1,7 @@
 extensions [table]
 
-globals [freq-tbl code-tbl *LEFT *RIGHT *WEIGHT *LETTER]
+globals [freq-tbl code-tbl *LEFT *RIGHT *WEIGHT *LETTER 
+  h_text-to-encode h_binary-encoded-text h_huffman-encoded-text h_header-and-encoded-text]
 
 to reset
   set huffman-encoded-text ""
@@ -8,6 +9,10 @@ to reset
   set header ""
   set text-to-encode ""
   set decoded-text ""
+  set h_text-to-encode 0
+  set h_binary-encoded-text 0
+  set h_huffman-encoded-text 0
+  set h_header-and-encoded-text 0
 end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -57,6 +62,19 @@ to encode
   ;; text
   let #huff-header huffman-header
   set header #huff-header
+  
+  ;; calcuate information content (H)
+  ;; for text-to-encode
+  set h_text-to-encode information-content freq-tbl
+  
+  ;; calculate H for binary-encoded-text
+  set h_binary-encoded-text information-content build-freq-table binary-encoded-text
+  
+  ;; calulate H for huffman encoded text
+  set h_huffman-encoded-text information-content build-freq-table huffman-encoded-text
+
+  ;; calulate H for huffman encoded text and header
+  set h_header-and-encoded-text information-content build-freq-table (word header huffman-encoded-text)
 end
 
 
@@ -304,7 +322,6 @@ to-report tree-header
   report #header
 end
 
-
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Procs used to both encode and decode
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -392,6 +409,31 @@ to-report insert-into-tree [$list $node]
     ] ;; end foreach
   ] ;; end if
   report #new-list
+end
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Shannon info. procedures
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; Proc to calculate the information content
+;; of a message based on the given frequency
+;; table.  H = -Sum(p_sub_i log_sub2 p_sub_i)
+to-report information-content [$freq-tbl]
+  ;; iterate through the frequency table
+  ;; to get the total count for
+  ;; calculating p_sub_i
+  let #n 0
+  foreach table:keys $freq-tbl [
+    set #n (#n + table:get $freq-tbl ?)
+  ]
+  
+  let #h 0
+  foreach table:keys $freq-tbl [
+    let #f_sub_i table:get $freq-tbl ?
+    let #p_sub_i #f_sub_i / #n
+    set #h (#h + (#p_sub_i * log #p_sub_i 2))
+  ]
+  report -1 * #h
 end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -711,6 +753,50 @@ NIL
 NIL
 NIL
 1
+
+MONITOR
+292
+179
+416
+224
+NIL
+h_text-to-encode
+5
+1
+11
+
+MONITOR
+4
+400
+162
+445
+NIL
+h_binary-encoded-text
+5
+1
+11
+
+MONITOR
+676
+291
+847
+336
+NIL
+h_huffman-encoded-text
+5
+1
+11
+
+MONITOR
+856
+292
+1048
+337
+NIL
+h_header-and-encoded-text
+5
+1
+11
 
 @#$#@#$#@
 ## WHAT IS IT?
