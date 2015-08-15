@@ -77,11 +77,11 @@ to decode
       ;; table
       let #h-tree build-huff-tree #freq-tbl
       
-      ;; TODO walk tree to find letter
-      
-      ]
-    
-    
+      ;; walk tree with bit stream and put
+      ;; decoded text in the monitor
+      let #bit-stream huffman-encoded-text
+      decode-bit-stream #bit-stream #h-tree
+    ]
 end
 
 to-report encoded-letter [$ltr]
@@ -136,7 +136,39 @@ to walk-tree-to-build-code-table [binary-code $node $code-tbl]
       [table:put $code-tbl (item *LETTER $node) binary-code]
   ] ;; end if
 end
-    
+
+to decode-bit-stream [$bit-stream $node] 
+  let #plain-text ""
+  while [length $bit-stream > 0] [
+    let #result (walk-tree-to-decode-bit-stream $bit-stream $node)
+    set $bit-stream (item 1 #result)
+    set #plain-text (word #plain-text (item 0 #result))
+  ]
+  set decoded-text #plain-text
+end
+
+to-report walk-tree-to-decode-bit-stream [$bit-stream $node]
+  ;; recursive procedure to walk tree 
+  ;; based on bit-stream until a node
+  ;; is reached
+  ifelse item *LETTER $node = ""
+    [ ;; read next bit
+      let #next-bit first $bit-stream
+      set $bit-stream but-first $bit-stream
+      ;; go left if next bit is 0
+      ;; go right if next bit is 1
+      ifelse #next-bit = "0"
+      [report walk-tree-to-decode-bit-stream $bit-stream (item *LEFT $node)]
+      [report walk-tree-to-decode-bit-stream $bit-stream (item *RIGHT $node)]
+    ]
+    [ ;; else
+      ;; this is a leaf-node so
+      ;; append the stored symbol
+      ;; to the decoded-text
+      report list (item *LETTER $node) $bit-stream
+    ] ;; end if
+end
+  
 to-report build-freq-table [$text]
   let #freq-tbl table:make
   let n 0
