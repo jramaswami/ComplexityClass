@@ -10,6 +10,10 @@ to reset
   set decoded-text ""
 end
 
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;;  Encoding Procedures
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 to encode
   set huffman-encoded-text ""
   set binary-encoded-text ""
@@ -55,6 +59,132 @@ to encode
   set header #huff-header
 end
 
+
+;; function to report the encoded
+;; letter from the code table
+to-report encoded-letter [$ltr]
+  report table:get code-tbl $ltr
+end
+
+;; function to take frequency table
+;; and encode it into a bit-stream
+;; for the header needed to 
+;; decode huffman encoded text
+to-report build-frequency-table-header
+  ;; first put a single bit to indicate
+  ;; the header type
+  ;; 1 for the frequency table header
+  let #header "1"
+  ;; find out how many
+  ;; are needed to encode symbol
+  ;; frequencies
+  ;; then create a byte that holds
+  ;; that information
+  let #bin-code-freq-len binary-code-for-freq-length
+  ;; TODO clean this up so we're not translating back to decimal
+  let #freq-bits binary-to-decimal #bin-code-freq-len
+  set #header (word #header bits-to-byte #bin-code-freq-len)
+  
+  ;; then find out how many symbols
+  ;; there are and encode that in 
+  ;; a byte so the reader knows when
+  ;; header ends and data starts
+  set #header (word #header binary-code-for-symbol-count)
+  
+  ;; now loop over freq-tbl
+  foreach table:keys freq-tbl [
+    ;; now encode first the symbol as
+    ;; 7 bits since ascii is less 
+    ;; than 128 decimal
+    let #symbol-bin-code pad-bits (decimal-to-binary ascii-code ?) 7
+    set #header (word #header #symbol-bin-code)
+    
+    ;; then encode the frequency of the
+    ;; symbol in the determined number
+    ;; of bits
+    let #freq-bin-code pad-bits (decimal-to-binary (table:get freq-tbl ?)) #freq-bits
+    set #header (word #header #freq-bin-code)
+  ]
+  report #header
+end
+
+;; procedure to initialize
+;; code table and then 
+;; call recursive procedure
+;; to build it
+to-report build-code-table [$huff-tree]
+  let #code-tbl table:make
+  walk-tree-to-build-code-table "" $huff-tree #code-tbl
+  report #code-tbl
+end
+
+;; recursive procedure to walk tree
+;; to leaf nodes and then record letter
+;; and binary code in a code-tbl
+to walk-tree-to-build-code-table [binary-code $node $code-tbl]
+  ;; if the node does not have a letter
+  ;; then recursively continue the walk
+  ;; by calling code-tree on left and
+  ;; right nodes held by the current node
+  ifelse item *LETTER $node = "" [
+    walk-tree-to-build-code-table (word binary-code "0") (item *LEFT $node) $code-tbl
+    walk-tree-to-build-code-table (word binary-code "1") (item *RIGHT $node) $code-tbl
+  ]
+  [ ;; else
+    ;; the node has a letter in it
+    ;; then it is a leaf node -- add
+    ;; the letter and code to the 
+    ;; code-tbl 
+    ifelse binary-code = ""
+      ;; found leaf node immediately so put in a 0
+      ;; in the code-tbl
+      [table:put $code-tbl (item *LETTER $node) "0"]
+      ;; found leaf node, record letter and code
+      ;; in the code-tbl
+      [table:put $code-tbl (item *LETTER $node) binary-code]
+  ] ;; end if
+end
+
+;; function to create the
+;; binary header that can
+;; be used to decode the
+;; huffman encoded text
+to-report huffman-header
+  let #header ""
+  ifelse huffman-header-type = "frequency table header"
+    [ set #header build-frequency-table-header ]
+    [ set #header tree-header ]
+  report #header
+end
+
+to-report binary-code-for-freq-length
+  let #max-freq get-max-freq
+  let #bin-max-freq decimal-to-binary #max-freq
+  let #len length #bin-max-freq
+  let #bin-code-for-freq-len decimal-to-binary #len
+  report #bin-code-for-freq-len 
+end
+
+to-report binary-code-for-symbol-count
+  let #sym-count (length (table:keys freq-tbl))
+  report bits-to-byte decimal-to-binary #sym-count
+end
+
+to-report get-max-freq 
+  ;; function to find the 
+  ;; maximum frequency 
+  ;; in the frequency table
+  let #max-freq 0
+  foreach table:keys freq-tbl [
+    if table:get freq-tbl ? > #max-freq [set #max-freq table:get freq-tbl ?]
+  ]
+  report int #max-freq
+end
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Decoding Procedures
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 to decode
   let #header header
   
@@ -82,59 +212,6 @@ to decode
       let #bit-stream huffman-encoded-text
       decode-bit-stream #bit-stream #h-tree
     ]
-end
-
-to-report encoded-letter [$ltr]
-  report table:get code-tbl $ltr
-end
-
-to-report node-vis [$node]
-  let #has-right (is-list? (item *RIGHT $node))
-  let #has-left (is-list? (item *LEFT $node))
-  let #vis (list (item *WEIGHT $node) (item *LETTER $node) #has-left #has-right)
-  report #vis
-end
-
-to walk-tree [$tree]
-  let #head node-vis $tree
-end
-
-to-report build-code-table [$huff-tree]
-  ;; procedure to initialize
-  ;; code table and then 
-  ;; call recursive procedure
-  ;; to build it
-  let #code-tbl table:make
-  walk-tree-to-build-code-table "" $huff-tree #code-tbl
-  report #code-tbl
-end
-
-to walk-tree-to-build-code-table [binary-code $node $code-tbl]
-  ;; recursive procedure to walk tree
-  ;; to leaf nodes and then record letter
-  ;; and binary code in a code-tbl
-  
-  ;; if the node does not have a letter
-  ;; then recursively continue the walk
-  ;; by calling code-tree on left and
-  ;; right nodes held by the current node
-  ifelse item *LETTER $node = "" [
-    walk-tree-to-build-code-table (word binary-code "0") (item *LEFT $node) $code-tbl
-    walk-tree-to-build-code-table (word binary-code "1") (item *RIGHT $node) $code-tbl
-  ]
-  [ ;; else
-    ;; the node has a letter in it
-    ;; then it is a leaf node -- add
-    ;; the letter and code to the 
-    ;; code-tbl 
-    ifelse binary-code = ""
-      ;; found leaf node immediately so put in a 0
-      ;; in the code-tbl
-      [table:put $code-tbl (item *LETTER $node) "0"]
-      ;; found leaf node, record letter and code
-      ;; in the code-tbl
-      [table:put $code-tbl (item *LETTER $node) binary-code]
-  ] ;; end if
 end
 
 to decode-bit-stream [$bit-stream $node] 
@@ -168,20 +245,69 @@ to-report walk-tree-to-decode-bit-stream [$bit-stream $node]
       report list (item *LETTER $node) $bit-stream
     ] ;; end if
 end
-  
-to-report build-freq-table [$text]
+
+;; Procedure to read the huffman header
+;; and decode it to rebuild the frequency
+;; table 
+to-report read-frequency-table-header [$header]
   let #freq-tbl table:make
-  let n 0
-  while [n < (length $text)] [
-    let ltr (substring $text n (n + 1))
-    ifelse table:has-key? #freq-tbl ltr
-      [ table:put #freq-tbl ltr ( (table:get #freq-tbl ltr) + 1) ]
-      [ table:put #freq-tbl ltr 1]
-    set n (n + 1)
+  
+  ;; read first byte to find out how many
+  ;; bits encode the frequency
+  let #frequency-length-byte substring $header 0 8
+  let #frequency-length binary-to-decimal #frequency-length-byte
+  
+  ;; read second byte to find out how many
+  ;; entries there are in the frequency table
+  let #entry-count-byte substring $header 8 16
+  let #entry-count binary-to-decimal #entry-count-byte
+  
+  ;; check header
+  let #header-length 16 + (7 + #frequency-length) * #entry-count
+  if length $header != #header-length
+    [show "Incorrect header length" stop]
+  
+  
+  let #n 16
+  while [#n < #header-length] [
+    let #symbol-bits substring $header #n (#n + 7)
+    let #frequency-bits substring $header (#n + 7) (#n + 7 + #frequency-length)
+    let #symbol from-ascii binary-to-decimal #symbol-bits
+    let #frequency binary-to-decimal #frequency-bits
+    table:put #freq-tbl #symbol #frequency
+    set #n (#n + 7 + #frequency-length)
   ]
   report #freq-tbl
 end
 
+to read-tree-header [$header]
+end
+
+
+to-report tree-header
+  let #header ""
+  ;; TODO:
+  ;; we could try to encode the 
+  ;; tree by figuring out how man bits
+  ;; are necessary for the value portion
+  ;; of the tree encoding that in
+  ;; binary
+  
+  ;; then encode a 0 for a node
+  ;; encode 1 followed by 
+  ;; the value in bits for 
+  ;; a leaf
+  
+  ;; the walk should be similar
+  ;; to code-tree
+  
+  report #header
+end
+
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Procs used to both encode and decode
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 to-report build-huff-tree [$freq-tbl]
   ;; get sorted keys and put them in a list, 
   ;; the list that will become our encoding tree
@@ -268,38 +394,38 @@ to-report insert-into-tree [$list $node]
   report #new-list
 end
 
-to read-tree-header [$header]
-end
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Helper Procedures
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 
-to-report read-frequency-table-header [$header]
+;; Procedure to build a frequency table
+;; based on the given text stream
+to-report build-freq-table [$text]
   let #freq-tbl table:make
-  
-  ;; read first byte to find out how many
-  ;; bits encode the frequency
-  let #frequency-length-byte substring $header 0 8
-  let #frequency-length binary-to-decimal #frequency-length-byte
-  
-  ;; read second byte to find out how many
-  ;; entries there are in the frequency table
-  let #entry-count-byte substring $header 8 16
-  let #entry-count binary-to-decimal #entry-count-byte
-  
-  ;; check header
-  let #header-length 16 + (7 + #frequency-length) * #entry-count
-  if length $header != #header-length
-    [show "Incorrect header length" stop]
-  
-  
-  let #n 16
-  while [#n < #header-length] [
-    let #symbol-bits substring $header #n (#n + 7)
-    let #frequency-bits substring $header (#n + 7) (#n + 7 + #frequency-length)
-    let #symbol from-ascii binary-to-decimal #symbol-bits
-    let #frequency binary-to-decimal #frequency-bits
-    table:put #freq-tbl #symbol #frequency
-    set #n (#n + 7 + #frequency-length)
+  let n 0
+  while [n < (length $text)] [
+    let ltr (substring $text n (n + 1))
+    ifelse table:has-key? #freq-tbl ltr
+      [ table:put #freq-tbl ltr ( (table:get #freq-tbl ltr) + 1) ]
+      [ table:put #freq-tbl ltr 1]
+    set n (n + 1)
   ]
   report #freq-tbl
+end
+
+to-report pad-bits [$bits $pad-length]
+  let #padding $pad-length - (length $bits)
+  let #n 0
+  let #byte $bits
+  while [#n < #padding] [
+    set #byte (word "0" #byte)
+    set #n (#n + 1)
+  ]
+  report #byte
+end
+
+to-report bits-to-byte [$bits]
+  report pad-bits $bits 8
 end
 
 to-report binary-encoded-letter [$ltr]
@@ -374,113 +500,18 @@ to-report from-ascii [$ascii-code]
 
 end
 
-to-report huffman-header
-  ;; function to create the
-  ;; binary header that can
-  ;; be used to decode the
-  ;; huffman encoded text
-  let #header ""
-  ifelse huffman-header-type = "frequency table header"
-    [ set #header build-frequency-table-header ]
-    [ set #header tree-header ]
-  report #header
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Visualization Procedures
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+to-report node-vis [$node]
+  let #has-right (is-list? (item *RIGHT $node))
+  let #has-left (is-list? (item *LEFT $node))
+  let #vis (list (item *WEIGHT $node) (item *LETTER $node) #has-left #has-right)
+  report #vis
 end
 
-to-report build-frequency-table-header
-  ;; first put a single bit to indicate
-  ;; the header type
-  ;; 1 for the frequency table header
-  let #header "1"
-  ;; find out how many
-  ;; are needed to encode symbol
-  ;; frequencies
-  ;; then create a byte that holds
-  ;; that information
-  let #bin-code-freq-len binary-code-for-freq-length
-  ;; TODO clean this up so we're not translating back to decimal
-  let #freq-bits binary-to-decimal #bin-code-freq-len
-  set #header (word #header bits-to-byte #bin-code-freq-len)
-  
-  ;; then find out how many symbols
-  ;; there are and encode that in 
-  ;; a byte so the reader knows when
-  ;; header ends and data starts
-  set #header (word #header binary-code-for-symbol-count)
-  
-  ;; now loop over freq-tbl
-  foreach table:keys freq-tbl [
-    ;; now encode first the symbol as
-    ;; 7 bits since ascii is less 
-    ;; than 128 decimal
-    let #symbol-bin-code pad-bits (decimal-to-binary ascii-code ?) 7
-    set #header (word #header #symbol-bin-code)
-    
-    ;; then encode the frequency of the
-    ;; symbol in the determined number
-    ;; of bits
-    let #freq-bin-code pad-bits (decimal-to-binary (table:get freq-tbl ?)) #freq-bits
-    set #header (word #header #freq-bin-code)
-  ]
-  report #header
-end
-
-to-report tree-header
-  let #header ""
-  ;; TODO:
-  ;; we could try to encode the 
-  ;; tree by figuring out how man bits
-  ;; are necessary for the value portion
-  ;; of the tree encoding that in
-  ;; binary
-  
-  ;; then encode a 0 for a node
-  ;; encode 1 followed by 
-  ;; the value in bits for 
-  ;; a leaf
-  
-  ;; the walk should be similar
-  ;; to code-tree
-  
-  report #header
-end
-
-to-report binary-code-for-freq-length
-  let #max-freq get-max-freq
-  let #bin-max-freq decimal-to-binary #max-freq
-  let #len length #bin-max-freq
-  let #bin-code-for-freq-len decimal-to-binary #len
-  report #bin-code-for-freq-len 
-end
-
-to-report binary-code-for-symbol-count
-  let #sym-count (length (table:keys freq-tbl))
-  report bits-to-byte decimal-to-binary #sym-count
-end
-
-to-report get-max-freq 
-  ;; function to find the 
-  ;; maximum frequency 
-  ;; in the frequency table
-  let #max-freq 0
-  foreach table:keys freq-tbl [
-    if table:get freq-tbl ? > #max-freq [set #max-freq table:get freq-tbl ?]
-  ]
-  report int #max-freq
-end
-
-to-report pad-bits [$bits $pad-length]
-  let #padding $pad-length - (length $bits)
-  let #n 0
-  let #byte $bits
-  while [#n < #padding] [
-    set #byte (word "0" #byte)
-    set #n (#n + 1)
-  ]
-  report #byte
-end
-
-to-report bits-to-byte [$bits]
-  report pad-bits $bits 8
+to walk-tree [$tree]
+  let #head node-vis $tree
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
