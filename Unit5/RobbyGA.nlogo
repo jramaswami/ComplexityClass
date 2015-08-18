@@ -496,7 +496,7 @@ population-size
 population-size
 20
 500
-80
+100
 2
 1
 NIL
@@ -511,7 +511,7 @@ mutation-rate
 mutation-rate
 0
 1
-0.05
+0.01
 .001
 1
 NIL
@@ -605,7 +605,7 @@ number-of-generations
 number-of-generations
 1
 1000
-100
+200
 1
 1
 NIL
@@ -1196,10 +1196,29 @@ Polygon -7500403 true true 270 75 225 30 30 225 75 270
 Polygon -7500403 true true 30 75 75 30 270 225 225 270
 
 @#$#@#$#@
-NetLogo 5.1.0
+NetLogo 5.2.0
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
+<experiments>
+  <experiment name="hw5-q1" repetitions="5" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go-n-generations</go>
+    <exitCondition>ticks &gt; 200</exitCondition>
+    <metric>best-fitness</metric>
+    <enumeratedValueSet variable="mutation-rate">
+      <value value="0.05"/>
+      <value value="0.1"/>
+      <value value="0.01"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="population-size">
+      <value value="100"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="number-of-generations">
+      <value value="200"/>
+    </enumeratedValueSet>
+  </experiment>
+</experiments>
 @#$#@#$#@
 @#$#@#$#@
 default
