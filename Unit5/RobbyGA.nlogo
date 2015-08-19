@@ -496,7 +496,7 @@ population-size
 population-size
 20
 500
-100
+150
 2
 1
 NIL
@@ -511,7 +511,7 @@ mutation-rate
 mutation-rate
 0
 1
-0.01
+0.1
 .001
 1
 NIL
@@ -1213,6 +1213,23 @@ NetLogo 5.2.0
     </enumeratedValueSet>
     <enumeratedValueSet variable="population-size">
       <value value="100"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="number-of-generations">
+      <value value="200"/>
+    </enumeratedValueSet>
+  </experiment>
+  <experiment name="hw5-q2" repetitions="5" runMetricsEveryStep="false">
+    <setup>setup</setup>
+    <go>go-n-generations</go>
+    <exitCondition>ticks &gt; 200</exitCondition>
+    <metric>best-fitness</metric>
+    <enumeratedValueSet variable="mutation-rate">
+      <value value="0.1"/>
+    </enumeratedValueSet>
+    <enumeratedValueSet variable="population-size">
+      <value value="50"/>
+      <value value="100"/>
+      <value value="150"/>
     </enumeratedValueSet>
     <enumeratedValueSet variable="number-of-generations">
       <value value="200"/>
