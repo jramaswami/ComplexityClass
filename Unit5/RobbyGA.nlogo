@@ -7,6 +7,7 @@ individuals-own [
   fitness      ;; average final score
   scaled-fitness ;; Used for display functions
   allele-distribution
+  fitness-rank ;; used for linear rank strategy
 ]
 
 ;; This is Robby.
@@ -31,7 +32,7 @@ globals [
   minfit
   maxfit
   yoffset       ; For placing individuals in world
-  tournament-size ; Size of "tournament" used to choose each parent. 
+  ;; tournament-size ; Size of "tournament" used to choose each parent. 
   ;; num-environments-for-fitness ; Number of environments for Robby to run in to calculate fitness
   ;; num-actions-per-environment; Number of actions Robby takes in each environment for calculating fitness
 ]
@@ -84,7 +85,7 @@ to initialize-globals
   set minfit  -100; For display.  Any fitness less than minfit is displayed at the same location as minfit.  
   set maxfit 500 ; (approximate) maximum possible fitness that an individual could obtain assuming approx. 50 cans per environment.  
   set yoffset 0
-  set tournament-size 15
+  ;; set tournament-size 15
   ;; set num-environments-for-fitness 20
   ;; set num-actions-per-environment 100
  end
@@ -251,15 +252,60 @@ to create-next-generation
   ; be even.)
   let crossover-count population-size / 2
 
+  ;; There are a variety of strategies used to choose the parents.  For efficiency
+  ;; setting up the strategies should be done outside the loop that chooses the
+  ;; parents in order to avoid doing the setup over and over
+  let t 0
+  let old-generation-list sort old-generation
+  let elites max-n-of num-elites old-generation [fitness]
+  if selection-method = "roulette wheel selection" [
+    set t sum [fitness] of old-generation
+  ]
+  if selection-method = "linear rank" [
+    ;; get sum of ranks
+    let j 0
+    set t 0
+    repeat length old-generation-list [ set j j + 1 set t t + (j + 1) ]
+    ;; assign rank to robots
+    set old-generation-list sort-by [[fitness] of ?1 < [fitness] of ?2] old-generation
+    let rank 1
+    foreach old-generation-list [
+      ask ? [set fitness-rank rank]
+      set rank rank + 1
+    ]
+    set old-generation-list sort old-generation
+  ]
+  
   repeat crossover-count [
-
-    ; We use "tournament selection". So for example if tournament-size is 15
-    ; then we randomly pick 15 individuals from the previous generation
-    ; and allow the best-individuals to reproduce.
-
-    let parent1 max-one-of (n-of tournament-size old-generation) [fitness]
-    let parent2 max-one-of (n-of tournament-size old-generation) [fitness]
-
+    
+    ;; first pick random individual
+    ;; to declare variable and make
+    ;; sure we have parents to reproduce
+    let parent1 one-of old-generation
+    let parent2 one-of old-generation
+    
+    ;; based on selection method, choose
+    ;; more appropriate parents
+    if selection-method = "tournament selection" [
+      set parent1 max-one-of (n-of tournament-size old-generation) [fitness]
+      set parent2 max-one-of (n-of tournament-size old-generation) [fitness]
+    ]
+    
+    if selection-method = "roulette wheel selection" [
+      set parent1 roulette-wheel-selection old-generation-list t
+      set parent2 roulette-wheel-selection old-generation-list t
+    ]
+    
+    if selection-method = "elitism" [
+      set parent1 one-of elites
+      set parent2 one-of elites
+    ]
+    
+    if selection-method = "linear rank" [
+      set parent1 linear-rank-selection old-generation-list t
+      set parent2 linear-rank-selection old-generation-list t
+    ]
+      
     ; get a two-element list containing two new chromosomes
     let child-chromosomes crossover ([chromosome] of parent1) ([chromosome] of parent2)
 
@@ -286,6 +332,52 @@ to create-next-generation
 
   ask old-generation [ die ]
   ask individuals [ mutate ]
+end
+
+;; roulette wheel selection of parents
+to-report roulette-wheel-selection [$old-generation-list $t]
+  let parent one-of $old-generation-list
+  let r random $t
+  let n 0
+  let i 0
+  let list-length length $old-generation-list
+  let continue? true
+  while [continue? and i < list-length] [
+    ;; sum fitness
+    set n n + ([fitness] of item i $old-generation-list)
+    ;; see if we have a winner
+    if (n >= r) 
+      [set parent item i $old-generation-list
+        set continue? false 
+        show (word "Roulette wheel, fitness=" [fitness] of parent ", r=" r ", t=" $t) ]
+    ;; increment list counter
+    set i i + 1
+  ] ;; end while
+  report parent
+end
+
+;; linear rank selection
+to-report linear-rank-selection [$old-generation-list $t]
+  let parent one-of $old-generation-list
+  ;; pick random number from 0 to t
+  let r random $t
+  
+  let i 0
+  let n 0
+  let list-length length $old-generation-list
+  let continue? true
+  while [continue? and i < list-length] [
+    ;; sum rank
+    set n n + ([fitness-rank] of item i $old-generation-list)
+    ;; see if we have a winner
+    if (n >= r) 
+      [set parent item i $old-generation-list
+        set continue? false
+        show (word "Linear rank, rank=" [fitness-rank] of parent ", r=" r ", t=" $t) ]
+    ;; increment list counter
+    set i i + 1
+  ] ;; end while
+  report parent
 end
 
 ;; each individual takes NUM-ACTIONS-PER-ENVIRONMENT actions according to its strategy on NUM-ENVIRONMENTS-FOR-FITNESS random environments
@@ -504,7 +596,7 @@ population-size
 population-size
 20
 500
-150
+100
 2
 1
 NIL
@@ -543,10 +635,10 @@ NIL
 1
 
 PLOT
-11
-357
-312
-557
+10
+372
+311
+572
 Best Fitness
 Generation
 Best Fitness
@@ -613,7 +705,7 @@ number-of-generations
 number-of-generations
 1
 1000
-200
+20
 1
 1
 NIL
@@ -883,16 +975,56 @@ NIL
 HORIZONTAL
 
 SLIDER
-195
-253
-368
-286
+10
+316
+183
+349
 crossover-probability
 crossover-probability
 0
 1
-0.25
+0
 0.01
+1
+NIL
+HORIZONTAL
+
+CHOOSER
+195
+320
+389
+365
+selection-method
+selection-method
+"tournament selection" "roulette wheel selection" "elitism" "linear rank"
+2
+
+SLIDER
+195
+252
+367
+285
+num-elites
+num-elites
+0
+1000
+50
+2
+1
+NIL
+HORIZONTAL
+
+SLIDER
+195
+285
+367
+318
+tournament-size
+tournament-size
+1
+1000
+15
+1
 1
 NIL
 HORIZONTAL
