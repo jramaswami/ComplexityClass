@@ -21,7 +21,7 @@ globals [
   generations-to-go 
   population-view strategy-view
   can-density
-  can-reward wall-penalty pick-up-penalty
+  ;; can-reward wall-penalty pick-up-penalty
   best-chromosome
   best-fitness
   min-fitness
@@ -32,8 +32,8 @@ globals [
   maxfit
   yoffset       ; For placing individuals in world
   tournament-size ; Size of "tournament" used to choose each parent. 
-  num-environments-for-fitness ; Number of environments for Robby to run in to calculate fitness
-  num-actions-per-environment; Number of actions Robby takes in each environment for calculating fitness
+  ;; num-environments-for-fitness ; Number of environments for Robby to run in to calculate fitness
+  ;; num-actions-per-environment; Number of actions Robby takes in each environment for calculating fitness
 ]
 
 ;;; setup procedures
@@ -78,15 +78,15 @@ to initialize-globals
   set strategy-view false
   set generations-to-go 0
   set can-density 0.5
-  set wall-penalty 5
-  set can-reward 10
-  set pick-up-penalty 1
+  ;; set wall-penalty 5
+  ;; set can-reward 10
+  ;; set pick-up-penalty 1
   set minfit  -100; For display.  Any fitness less than minfit is displayed at the same location as minfit.  
   set maxfit 500 ; (approximate) maximum possible fitness that an individual could obtain assuming approx. 50 cans per environment.  
   set yoffset 0
   set tournament-size 15
-  set num-environments-for-fitness 20
-  set num-actions-per-environment 100
+  ;; set num-environments-for-fitness 20
+  ;; set num-actions-per-environment 100
  end
 
 
@@ -320,11 +320,19 @@ end
 ;; the other.
 
 to-report crossover [chromosome1 chromosome2]
-  let split-point 1 + random (length chromosome1 - 1)
-  report list (sentence (sublist chromosome1 0 split-point)
-                        (sublist chromosome2 split-point length chromosome2))
-              (sentence (sublist chromosome2 0 split-point)
-                        (sublist chromosome1 split-point length chromosome1))
+  let p (random 100) / 100
+  ifelse p < crossover-probability 
+    [ ;; reproduce using crossover
+      let split-point 1 + random (length chromosome1 - 1)
+      report list (sentence (sublist chromosome1 0 split-point)
+        (sublist chromosome2 split-point length chromosome2))
+      (sentence (sublist chromosome2 0 split-point)
+        (sublist chromosome1 split-point length chromosome1))
+    ]
+    [ ;; else
+      ;; reproduce using cloning
+      report list chromosome1 chromosome2
+    ] ;; endif
 end
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -461,9 +469,9 @@ to-report chromosome-distance [individual1 individual2]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
-344
+499
 10
-651
+806
 338
 -1
 -1
@@ -488,10 +496,10 @@ generations
 90.0
 
 SLIDER
-13
-276
-185
-309
+12
+167
+184
+200
 population-size
 population-size
 20
@@ -503,10 +511,10 @@ NIL
 HORIZONTAL
 
 SLIDER
-13
-307
-185
-340
+12
+198
+184
+231
 mutation-rate
 mutation-rate
 0
@@ -518,10 +526,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-45
-115
-118
-148
+13
+92
+86
+125
 NIL
 setup
 NIL
@@ -553,36 +561,36 @@ PENS
 "best" 1.0 0 -16777216 true "" ""
 
 OUTPUT
-682
+819
 10
-1113
-552
+1250
+484
 9
 
 TEXTBOX
-1116
-203
-1274
-346
-\"↑\" =   move-north  \n \"→\"  = move-east \n \"↓\"  = move-south  \n \"←\"  = move-west\n \"+\"   = move-random\n \" \"    =  stay-put   \n\"●\"    =  pick-up-can
+885
+497
+1305
+570
+\"↑\" =   move-north            \"→\"  = move-east \n \"↓\"  = move-south            \"←\"  = move-west\n \"+\"   = move-random        \" \"    =  stay-put   \n\"●\"    =  pick-up-can
 13
 0.0
 1
 
 TEXTBOX
-11
-76
-260
-108
+13
+60
+262
+92
 Speed up speed slider or turn off view updates for faster response.
 11
 0.0
 1
 
 BUTTON
-343
+498
 474
-532
+687
 507
 step thru best strategy
 run-trial-step
@@ -597,10 +605,10 @@ NIL
 0
 
 SLIDER
-13
-245
-185
-278
+12
+136
+184
+169
 number-of-generations
 number-of-generations
 1
@@ -612,10 +620,10 @@ NIL
 HORIZONTAL
 
 BUTTON
-17
-194
-160
-227
+206
+92
+349
+125
 NIL
 go-n-generations
 NIL
@@ -629,9 +637,9 @@ NIL
 1
 
 TEXTBOX
-347
+502
 340
-596
+751
 368
 Similarity to best individual  ------->
 11
@@ -639,9 +647,9 @@ Similarity to best individual  ------->
 1
 
 BUTTON
-342
+497
 426
-493
+648
 459
 set up environment
 display-strategy
@@ -656,9 +664,9 @@ NIL
 1
 
 TEXTBOX
-539
+694
 478
-660
+815
 543
 Watch Robby move one step at a time.  
 10
@@ -666,9 +674,9 @@ Watch Robby move one step at a time.
 1
 
 TEXTBOX
-506
+661
 428
-656
+811
 456
 Randomly distribute cans throughout the world. 
 10
@@ -676,9 +684,9 @@ Randomly distribute cans throughout the world.
 1
 
 TEXTBOX
-344
+499
 384
-665
+820
 424
 After running the GA,  watch Robby use the best evolved strategy:
 14
@@ -686,9 +694,9 @@ After running the GA,  watch Robby use the best evolved strategy:
 1
 
 TEXTBOX
-287
+442
 46
-437
+592
 64
 Fitness
 14
@@ -696,19 +704,19 @@ Fitness
 1
 
 TEXTBOX
-10
-52
-160
-72
+12
+36
+162
+56
 Run the GA:
 14
 3.0
 1
 
 TEXTBOX
-475
+630
 354
-625
+780
 372
 Population
 14
@@ -716,9 +724,9 @@ Population
 1
 
 TEXTBOX
-276
+431
 94
-426
+581
 112
 High Fitness
 11
@@ -726,9 +734,9 @@ High Fitness
 1
 
 TEXTBOX
-277
+432
 301
-427
+582
 319
 Low Fitness
 11
@@ -736,9 +744,9 @@ Low Fitness
 1
 
 TEXTBOX
-255
+410
 188
-405
+560
 206
 Medium Fitness
 11
@@ -746,9 +754,9 @@ Medium Fitness
 1
 
 TEXTBOX
-331
+486
 522
-481
+636
 550
 Switch between population\nand best-strategy displays:
 11
@@ -756,9 +764,9 @@ Switch between population\nand best-strategy displays:
 1
 
 BUTTON
-484
+639
 519
-616
+771
 552
 NIL
 toggle-display
@@ -773,10 +781,10 @@ NIL
 1
 
 BUTTON
-34
-155
-134
-188
+98
+92
+198
+125
 go-forever
 go
 T
@@ -798,6 +806,96 @@ Robby the Robot Genetic Algorithm
 18
 95.0
 1
+
+SLIDER
+196
+136
+368
+169
+wall-penalty
+wall-penalty
+0
+50
+5
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+196
+168
+368
+201
+can-reward
+can-reward
+0
+50
+10
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+196
+200
+368
+233
+pick-up-penalty
+pick-up-penalty
+0
+50
+1
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+10
+253
+183
+286
+num-environments-for-fitness
+num-environments-for-fitness
+0
+100
+20
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+10
+285
+183
+318
+num-actions-per-environment
+num-actions-per-environment
+0
+200
+100
+1
+1
+NIL
+HORIZONTAL
+
+SLIDER
+195
+253
+368
+286
+crossover-probability
+crossover-probability
+0
+1
+0.25
+0.01
+1
+NIL
+HORIZONTAL
 
 @#$#@#$#@
 ## WHAT IS IT?
