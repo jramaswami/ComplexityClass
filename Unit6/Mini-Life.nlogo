@@ -39,7 +39,7 @@ end
 
 to count-black-nbrs             ;; mark only the cells with 'just enough' neighbors
   let n count (cells-on neighbors) with [color = black]
-  ifelse (n = 3 or (color = black and n = 2)) [set live? true] [set live? false];; 'live' next generation
+  ifelse (n < 4 or (color = black and n < 3)) [set live? true] [set live? false];; 'live' next generation
 end
 
 to change-color
@@ -161,7 +161,7 @@ percent-black
 percent-black
 0
 100
-12
+14
 1
 1
 %
@@ -295,7 +295,7 @@ Circle -7500403 true true 0 0 300
 Circle -16777216 false false 0 0 300
 
 @#$#@#$#@
-NetLogo 5.0.3
+NetLogo 5.2.0
 @#$#@#$#@
 @#$#@#$#@
 @#$#@#$#@
@@ -303,9 +303,9 @@ NetLogo 5.0.3
 @#$#@#$#@
 default
 0.0
--0.2 0 1.0 0.0
+-0.2 0 0.0 1.0
 0.0 1 1.0 0.0
-0.2 0 1.0 0.0
+0.2 0 0.0 1.0
 link direction
 true
 0
