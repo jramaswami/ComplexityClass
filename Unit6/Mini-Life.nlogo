@@ -38,8 +38,8 @@ to go
 end
 
 to count-black-nbrs             ;; mark only the cells with 'just enough' neighbors
-  let n count (cells-on neighbors) with [color = black]
-  ifelse (n < 4 or (color = black and n < 3)) [set live? true] [set live? false];; 'live' next generation
+  let n count (cells-on neighbors4) with [color = black]
+  ifelse (n = 3 or (color = black and n = 2)) [set live? true] [set live? false];; 'live' next generation
 end
 
 to change-color
@@ -161,7 +161,7 @@ percent-black
 percent-black
 0
 100
-14
+9
 1
 1
 %
