@@ -63,13 +63,15 @@ to draw-single-black-cell-lattice
 end
 
 to draw-lattice
-  ask patches with [pycor = lattice-ycor] [ set-cell-state ]
+  ask patches with [pycor = lattice-ycor] [
+    ifelse asynchronous [set-cell-state-asynchronously] [set-cell-state-synchronously]
+  ]
 end
 
 ;; patch procedure to set the cell's state 
 ;; to the appropriate state based on the
 ;; current eca number
-to set-cell-state
+to set-cell-state-synchronously
   ;; form a bitmap of the neighborhood
   let s ""
   ifelse [pcolor] of patch-at -1 1 = black [set s (word s "1")] [set s (word s "0")]
@@ -81,13 +83,28 @@ to set-cell-state
   let ns substring eca-bitmap (7 - i) (7 - i + 1)
   ifelse ns = "1" [set pcolor black] [set pcolor white]
 end  
+
+to set-cell-state-asynchronously
+  ;; copy state of cells above
+  ;; form a bitmap of the neighborhood
+  set pcolor [pcolor] of patch-at 0 1
+  let s ""
+  ifelse [pcolor] of patch-at -1 0 = black [set s (word s "1")] [set s (word s "0")]
+  ifelse pcolor = black [set s (word s "1")] [set s (word s "0")]
+  ifelse [pcolor] of patch-at 1 0 = black [set s (word s "1")] [set s (word s "0")]
+  ;; translate map into decimal
+  let i binarystrings:binary-to-decimal s
+  ;; get the next eca cell state
+  let ns substring eca-bitmap (7 - i) (7 - i + 1)
+  ifelse ns = "1" [set pcolor black] [set pcolor white]
+end  
   
 @#$#@#$#@
 GRAPHICS-WINDOW
-287
-20
-1158
-481
+307
+17
+1178
+478
 -1
 -1
 8.62
@@ -128,10 +145,10 @@ NIL
 1
 
 BUTTON
-19
-60
-86
-93
+18
+64
+85
+97
 NIL
 step\n
 NIL
@@ -145,10 +162,10 @@ NIL
 1
 
 BUTTON
-19
-99
-86
-132
+17
+111
+84
+144
 go
 step
 T
@@ -163,9 +180,9 @@ NIL
 
 SLIDER
 92
-100
+71
 264
-133
+104
 eca-number
 eca-number
 1
@@ -185,6 +202,17 @@ initial-condition
 initial-condition
 "random" "single black cell"
 1
+
+SWITCH
+92
+111
+264
+144
+asynchronous
+asynchronous
+1
+1
+-1000
 
 @#$#@#$#@
 ## WHAT IS IT?
