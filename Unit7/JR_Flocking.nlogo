@@ -22,22 +22,26 @@ end
 to align
   if any? other turtles with [distance myself < vision] [
     let my-neighbors other turtles with [distance myself < vision]
-    let mean-heading mean [heading] of my-neighbors
-    let h subtract-headings heading mean-heading
-    ifelse h < 0 
-      [ set heading heading + (max list h (-1 * maximum-alignment-turn)) ] 
-      [ set heading heading + (min list h maximum-alignment-turn) ] 
+    let x-component sum [dx] of my-neighbors
+    let y-component sum [dy] of my-neighbors
+    if x-component != 0 or y-component != 0 [
+      let h subtract-headings heading (atan x-component y-component)
+      ifelse h < 0
+        [ set heading heading + (max list h (-1 * maximum-alignment-turn)) ]
+        [ set heading heading + (min list h maximum-alignment-turn) ]   
+    ]
   ]
 end
  
 to cohere
-  let mean-x mean [xcor] of other turtles
-  let mean-y mean [ycor] of other turtles
-  let mean-h towardsxy mean-x mean-y
-  let h subtract-headings heading mean-h
-  ifelse h < 0 
-    [ set heading heading + (max list h (-1 * maximum-coherence-turn)) ] 
-    [ set heading heading + (min list h maximum-coherence-turn) ]
+  let x-component sum [xcor] of other turtles
+  let y-component sum [ycor] of other turtles
+  if x-component != 0 or y-component != 0 [
+    let h subtract-headings heading (atan x-component y-component)
+    ifelse h < 0
+      [ set heading heading + (max list h (-1 * maximum-coherence-turn)) ] 
+      [ set heading heading + (min list h maximum-coherence-turn) ]
+  ]
 end
 @#$#@#$#@
 GRAPHICS-WINDOW
