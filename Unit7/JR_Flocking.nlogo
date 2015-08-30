@@ -25,7 +25,7 @@ to align
     let x-component sum [dx] of my-neighbors
     let y-component sum [dy] of my-neighbors
     if x-component != 0 or y-component != 0 [
-      let h subtract-headings heading (atan x-component y-component)
+      let h subtract-headings (atan x-component y-component) heading 
       ifelse h < 0
         [ set heading heading + (max list h (-1 * maximum-alignment-turn)) ]
         [ set heading heading + (min list h maximum-alignment-turn) ]   
@@ -37,7 +37,7 @@ to cohere
   let x-component sum [xcor] of other turtles
   let y-component sum [ycor] of other turtles
   if x-component != 0 or y-component != 0 [
-    let h subtract-headings heading (atan x-component y-component)
+    let h subtract-headings (atan x-component y-component) heading 
     ifelse h < 0
       [ set heading heading + (max list h (-1 * maximum-coherence-turn)) ] 
       [ set heading heading + (min list h maximum-coherence-turn) ]
