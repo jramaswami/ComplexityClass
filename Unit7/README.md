@@ -21,6 +21,7 @@ Dektar, and Deborah M. Gordon.
 
 I had some problems when I tried to download NetLogo models from github.
 Here is how I was able to download them and get them working.
+
 1. Click on the model you want to download.  
 2. Click on the "Raw" button.
 3. Save the resulting page.
