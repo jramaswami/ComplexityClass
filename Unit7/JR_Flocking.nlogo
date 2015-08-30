@@ -1,3 +1,4 @@
+turtles-own [my-neighbors nearest-neighbor]
 to setup
   ca
   crt population [ setxy random-xcor random-ycor set size 1.5]
@@ -6,25 +7,33 @@ end
 
 to go
   ask turtles [
-    ifelse any? other turtles with [distance myself <= minimum-separation]
+    set nearest-neighbor min-one-of other turtles [distance myself]
+    ifelse distance nearest-neighbor < minimum-separation
       [ separate ]
-      [ align cohere ]
+      [ set-my-neighbors align cohere ]
   ]
   repeat 5 [ask turtles [fd 0.2] display]
   tick
 end
 
 to separate
-  let nearest-neighbor min-one-of other turtles [distance myself]
-  if distance nearest-neighbor <= minimum-separation [ set heading ([heading] of nearest-neighbor + maximum-separation-turn) ]
+  ;; the number of degrees in the smallest angle by which heading2 could be rotated to produce heading1
+  let h subtract-headings heading [heading] of nearest-neighbor
+  ifelse h < 0
+    [ set heading heading + (max list h (-1 * maximum-separation-turn)) ]
+    [ set heading heading + (min list h maximum-separation-turn) ]
 end
 
+to set-my-neighbors
+  set my-neighbors other turtles in-radius vision
+end
+    
 to align
-  if any? other turtles with [distance myself < vision] [
-    let my-neighbors other turtles with [distance myself < vision]
+  if any? other turtles with [distance myself < vision] [ 
     let x-component sum [dx] of my-neighbors
     let y-component sum [dy] of my-neighbors
     if x-component != 0 or y-component != 0 [
+      ;; the number of degrees in the smallest angle by which heading2 could be rotated to produce heading1
       let h subtract-headings (atan x-component y-component) heading 
       ifelse h < 0
         [ set heading heading + (max list h (-1 * maximum-alignment-turn)) ]
@@ -34,9 +43,10 @@ to align
 end
  
 to cohere
-  let x-component sum [xcor] of other turtles
-  let y-component sum [ycor] of other turtles
+  let x-component sum [xcor] of my-neighbors
+  let y-component sum [ycor] of my-neighbors
   if x-component != 0 or y-component != 0 [
+    ;; the number of degrees in the smallest angle by which heading2 could be rotated to produce heading1
     let h subtract-headings (atan x-component y-component) heading 
     ifelse h < 0
       [ set heading heading + (max list h (-1 * maximum-coherence-turn)) ] 
@@ -129,7 +139,7 @@ vision
 vision
 0
 10
-3.5
+3
 0.5
 1
 NIL
